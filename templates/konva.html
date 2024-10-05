@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konva.js with Flask - Copy Paste</title>
+    <script src="https://cdn.jsdelivr.net/npm/konva@8/konva.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #container {
+            width: 100%;
+            height: 80%; /* Reduce height to leave space for buttons */
+            border: 1px solid black;
+            z-index: 1;
+        }
+        .controls {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            background-color: white;
+            z-index: 10; /* Ensure the buttons stay on top of the canvas */
+        }
+        button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Konva canvas container -->
+<div id="container"></div>
+
+<!-- Control buttons for adding shapes -->
+<div class="controls">
+    <button id="add-rectangle">Add Rectangle</button>
+    <button id="add-circle">Add Circle</button>
+    <button id="add-line">Add Line</button>
+    <button id="save">Save Diagram</button>
+    <button id="load">Load Diagram</button>
+</div>
+
+<script src="{{ url_for('static', filename='konva.js') }}"></script>
+
+</body>
+</html>

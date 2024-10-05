@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draw.io Integration</title>
+    <style>
+        iframe {
+            width: 100%;
+            height: 100vh;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Draw.io Integration</h1>
+    
+    <!-- Draw.io Iframe -->
+    <iframe
+        id="drawio-editor"
+        src="https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&proto=json&saveAndExit=1"
+        frameborder="0"
+        allowfullscreen>
+    </iframe>
+
+    <script>
+        const editor = document.getElementById('drawio-editor');
+
+        // Listen for messages from Draw.io iframe
+        window.addEventListener('message', function(event) {
+            const message = event.data;
+
+            // Handle save message from Draw.io
+            if (message && message.event === 'save') {
+                const diagramData = message.data;
+                
+                // Send the diagram data to Flask backend
+                fetch('/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: 'default',  // You can modify this to handle multiple diagrams
+                        diagram: diagramData
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);  // Notify user that diagram is saved
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>

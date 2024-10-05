@@ -8,7 +8,7 @@
 - [ ] Add text to the actual thing
 - [ ] Editable Text
 - [ ] Calculate the conversion of pixel/grid to real world values
-- [ ] Enable Copy-Paste of Shapes
+- [/] Enable Copy-Paste of Shapes
 - [ ] Multiple Selection of Shapes
 - [ ] Delete Shapes
 
