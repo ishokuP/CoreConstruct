@@ -1,0 +1,292 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Ramabhadra';
+    font-weight: 400;
+    background-color: #4C4379;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+h1,
+h3 {
+    letter-spacing: 2px;
+}
+
+button {
+    font-family: 'Ramabhadra';
+    font-weight: 400;
+    padding: 3px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+table {
+    border: 1px solid #303030;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+td {
+    padding: 10px;
+    color: white;
+}
+
+.manual-input {
+    width: 340px;
+    background-color: #4A5F8F;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.workspace-header {
+    background-color: #435379;
+    padding: 10px 15px;
+    color: white;
+    border-radius: 10px 10px 0px 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.td-input {
+    border-top: 1px solid #303030;
+    display: flex;
+    justify-content: center;
+    /* align-items: center;
+    text-align: center; */
+}
+
+.td-input input {
+    font-family: 'Ramabhadra';
+    text-align: center;
+}
+
+
+.file-container {
+    display: flex;
+    max-width: 87%;
+}
+
+.file-container input[type=file]::file-selector-button {
+    font-family: 'Ramabhadra';
+    color: white;
+    background-color: #435379;
+    border: 1px solid #303030;
+    border-radius: 5px;
+    padding: 0 15px;
+    margin-right: 20px;
+    cursor: pointer;
+}
+
+.open input[type="file"] {
+    display: none;
+}
+
+.open label {
+    cursor: pointer;
+}
+
+input[type=file]::file-selector-button:hover {
+    background-color: #4C4379;
+}
+
+.specs button:hover {
+    background-color: #4C4379;
+}
+
+.toolbar button:hover {
+    background-color: #4C4379;
+}
+
+.menu button:hover {
+    background-color: #4C4379;
+}
+
+.generate-btn button:hover {
+    border: 1px solid #303030;
+}
+
+.main {
+    padding: 30px;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    color: #303030;
+    font-size: 14px;
+    flex-grow: 1;
+}
+
+.content {
+    text-align: center;
+}
+
+.header {
+    display: flex;
+    width: 100%;
+}
+
+.input-specs {
+    flex-grow: 1;
+    padding: 30px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #435379 #4A5F8F;
+}
+
+.input-fields {
+    display: none;
+}
+
+.input-parameters {
+    display: none;
+}
+
+.specs button {
+    border-color: #303030;
+    background-color: #435379;
+    color: white;
+    border-width: 1px;
+    width: 100%;
+    margin-top: 15px;
+    text-align: left;
+}
+
+.select-box {
+    /* display: flex; */
+    font-family: 'Ramabhadra';
+    font-weight: 400;
+    padding: 3px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    border-color: #303030;
+    background-color: white;
+    color: #1E1E1E;
+    border-width: 1px;
+    width: 100%;
+    margin-top: 15px;
+    text-align: left;
+}
+
+option:hover {
+    background-color: #4C4379;
+}
+
+.select-box option:checked {
+    background-color: #4C4379;
+}
+
+/* .select-box:focus {
+    background: #fff;
+} */
+
+.section button {
+    background-color: #727BAD;
+}
+
+.section {
+    margin-left: 20px;
+}
+
+.section input {
+    font-family: 'Ramabhadra';
+    font-weight: 400;
+    padding: 3px 10px;
+    border-radius: 10px;
+    width: 100%;
+    margin-top: 10px;
+    background-color: #C5CEFF;
+    color: #1E1E1E;
+}
+
+.generate-btn {
+    padding: 30px;
+    margin-top: auto;
+}
+
+.generate-btn button {
+    color: white;
+    font-size: 15px;
+    background-color: #4C4379;
+    border: none;
+    padding: 10px;
+    width: 100%;
+}
+
+.workspace {
+    background-color: #303030;
+    padding: 30px;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    gap: 30px;
+    flex-grow: 1;
+    overflow-x: hidden;
+
+}
+
+.container {
+    width: 100%;
+    gap: 50px;
+}
+
+.logo {
+    background-color: #4C4379;
+    width: 160px;
+    height: 120px;
+    align-self: center;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.logo img {
+    width: 120px;
+    height: auto;
+}
+
+.project-title {
+    padding: 15px 18px;
+    background-color: #435379;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.toolbar {
+    background-color: #4A5F8F;
+    padding: 10px;
+    width: 100%;
+}
+
+.toolbar button {
+    border: none;
+    background-color: #727BAD;
+    color: white;
+    margin-left: 10px;
+}
+
+.menu {
+    padding: 10px;
+}
+
+.menu button {
+    border: none;
+    background-color: #727BAD;
+    color: white;
+    margin-left: 10px;
+    width: 72px; /* or width: auto; */
+}

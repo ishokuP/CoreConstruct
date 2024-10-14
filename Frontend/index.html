@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreConstruct</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ramabhadra&display=swap">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="logo.png" alt="CoreConstruct Logo">
+        </div>
+
+        <div class="container">
+            <div class="project-title">
+                <h1 id="project-title">Untitled Project.cct</h1>
+
+                <div class="menu">
+                    <button>Edit</button>
+                    <button class="open" onclick="getFoundationPlan()">
+                        <label for="foundation-plan" class="foundation-plan-upload">
+                            Open <input id="foundation-plan" type="file" accept="image/*" />
+                        </label>
+                    </button>
+                    <button onclick="saveFoundationPlan()">
+                        Save
+                    </button>
+                    <button onclick="saveAsFoundationPlan()">
+                        Save As
+                    </button>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <button>Add Column</button>
+                <button>Add Footing</button>
+                <button>Add Beam</button>
+                <button>Add Retaining Wall</button>
+                <button>Add Slab</button>
+                <button>Add Pile</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="manual-input">
+            <div class="workspace-header">
+                <h3>INPUT PARAMETERS</h3>
+            </div>
+
+            <div class="input-specs">
+                <table>
+                    <tr>
+                        <td>
+                            <label for="floor-plan">Upload Top/Plan View Floor Plan</label>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="td-input">
+                            <div class="file-container">
+                                <input type="file" id="floor-plan" accept="image/*">
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="specs">
+                    <button onclick="toggleFields('soilProperties')">Soil Properties</button><br>
+
+                    <div id="soilProperties" class="input-fields">
+
+                        <div class="section">
+                            <button onclick="toggleFields('soilType')">Soil Type</button>
+
+                            <div class="section">
+                                <!-- <input type="text" id="soilType" placeholder="e.g. clay, sand, loam, gravel"
+                                    class="input-parameters"> -->
+
+                                <select name="soilType" id="soilType" class="select-box" 
+                                    onfocus='this.size=4;' onblur='this.size=0;' onchange='this.size=1; this.blur();'
+                                    >
+                                    <option disabled selected>Select Soil Type*</option>
+                                    <option value="clay">Clay</option>
+                                    <option value="sand">Sand</option>
+                                    <option value="loam">Loam</option>
+                                    <option value="gravel">Gravel</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('soilBearing')">Soil Bearing Capacity (kPa)</button>
+
+                            <div class="section">
+                                <!-- <input type="text" id="soilBearing" placeholder="Enter Soil Strength in kPa"
+                                    class="input-parameters"> -->
+
+                                <select name="soilType" id="soilType" class="select-box">
+                                    <option disabled selected>Select Soil Type*</option>
+                                    <option value="clay">Clay</option>
+                                    <option value="sand">Sand</option>
+                                    <option value="loam">Loam</option>
+                                    <option value="gravel">Gravel</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- <div class="section">
+                            <button onclick="toggleFields('soilDensity')">Soil Density (kN/m³)</button>
+
+                            <div class="section">
+                                <input type="text" id="soilDensity" placeholder="Enter Soil Density in kN/m³"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('waterTable')">Water Table Level (meter)</button>
+
+                            <div class="section">
+                                <input type="text" id="waterTable" placeholder="Enter Water Table Level in meter"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('soilStiffness')">Soil Stiffness (MPa)</button>
+
+                            <div class="section">
+                                <input type="text" id="soilStiffness" placeholder="Enter Soil Stiffness in MPa"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('soilVariability')">Soil Variability</button>
+
+                            <div class="section">
+                                <input type="text" id="soilVariability" placeholder="e.g. low medium, high"
+                                    class="input-parameters">
+                            </div>
+                        </div> -->
+                    </div>
+
+                    <!-- <button onclick="toggleFields('loadSpecs')">Load Specifications</button><br>
+
+                    <div id="loadSpecs" class="input-fields">
+
+                        <div class="section">
+                            <button onclick="toggleFields('liveLoad')">Live Load (kN/m²)</button>
+
+                            <div class="section">
+                                <input type="text" id="liveLoad" placeholder="Enter Live Load in (kN/m²)"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('deadLoad')">Dead Load (kN/m²)</button>
+
+                            <div class="section">
+                                <input type="text" id="deadLoad" placeholder="Enter Dead Load in kN/m²"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('windLoad')">Wind Load (kN/m²)</button>
+
+                            <div class="section">
+                                <input type="text" id="windLoad" placeholder="Enter Wind Load in kN/m²"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('seismicLoad')">Seismic Load (kN/m²)</button>
+
+                            <div class="section">
+                                <input type="text" id="seismicLoad" placeholder="Enter Seismic Load in kN/m²"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('loadDistribution')">Load Distribution</button>
+
+                            <div class="section">
+                                <input type="text" id="loadDistribution" placeholder="e.g. uniform, concentrated"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+                    </div> -->
+
+                    <button onclick="toggleFields('buildingInfo')">Building Information</button><br>
+
+                    <div id="buildingInfo" class="input-fields">
+
+                        <div class="section">
+                            <button onclick="toggleFields('buildingType')">Building Type</button>
+
+                            <div class="section">
+                                <!-- <input type="text" id="buildingType" placeholder="e.g. residential, commercial"
+                                    class="input-parameters"> -->
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('numStories')">Number of Storeys</button>
+
+                            <div class="section">
+                                <input type="text" id="numStories" placeholder="e.g. 1-story, 2-story"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('materialSpecs')">Material Specifications</button>
+
+                            <div class="section">
+                                <input type="text" id="materialSpecs" placeholder="e.g. concrete, steel, frame, truss"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="toggleFields('addConsiderations')">Additional Considerations</button>
+
+                    <div id="addConsiderations" class="input-fields">
+
+                        <div class="section">
+                            <button onclick="toggleFields('seismicZone')">Seismic Zone</button>
+
+                            <div class="section">
+                                <input type="text" id="seismicZone" placeholder="Enter Seismic Zone"
+                                    class="input-parameters">
+                            </div>
+                        </div>
+
+                        <!-- <div class="section">
+                            <button onclick="toggleFields('specialConsider')">Number of Stories</button>
+
+                            <div class="section">
+                                <input type="text" id="specialConsider" placeholder="Enter special considerations"
+                                    class="input-parameters">
+                            </div>
+                        </div> -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="generate-btn">
+                <button>Analyze & Generate</button>
+            </div>
+
+        </div>
+
+        <div class="main">
+            <div class="content">
+                No plan generated yet. Please input values and click the button to analyze & generate.
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <!-- <script src="js/query-latest.min.js"></script> -->
+</body>
+
+</html>
