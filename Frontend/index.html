@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreConstruct</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ramabhadra&display=swap">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="logo.png" alt="CoreConstruct Logo">
+        </div>
+
+        <div class="container">
+            <div class="project-title">
+                <h1 id="project-title" contenteditable="true" spellcheck="false">Untitled Project.cct</h1>
+
+                <div class="menu">
+                    <button>Edit</button>
+                    <button class="open" onclick="getFoundationPlan()">
+                        <label for="foundation-plan" class="foundation-plan-upload">
+                            Open <input id="foundation-plan" type="file" accept="image/*, .cct" />
+                        </label>
+                    </button>
+                    <button onclick="saveFoundationPlan()">
+                        Save
+                    </button>
+                    <button onclick="saveAsFoundationPlan()">
+                        Save As
+                    </button>
+                    <div class="section">
+                        <div id="saveAsModal" class="modal" style="display:none;">
+                            <div class="modal-content">
+                                <h3>Select File Type</h3>
+                                <h4><i>Save As</i></h4>
+                                <select id="file-type-selector">
+                                    <option value="png">PNG</option>
+                                    <option value="jpg">JPEG</option>
+                                    <option value="psd">PSD</option>
+                                </select>
+                                <br><br>
+                                <button onclick="confirmSaveAs()">Confirm</button>
+                                <button onclick="closeModal()">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <button>Add Column</button>
+                <button>Add Footing</button>
+                <button>Add Beam</button>
+                <button>Add Retaining Wall</button>
+                <button>Add Slab</button>
+                <button>Add Pile</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="manual-input">
+            <div class="workspace-header">
+                <h3>INPUT PARAMETERS</h3>
+            </div>
+
+            <div class="input-specs">
+                <table>
+                    <tr>
+                        <td>
+                            <label for="floor-plan">Upload Top/Plan View Floor Plan</label>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="td-input">
+                            <div class="file-container">
+                                <input type="file" id="floor-plan" accept="image/*">
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="specs">
+                    <button onclick="toggleFields('soilProperties', 'arrowSoilProperties')">
+                        <div id="arrowSoilProperties" class="arrow"></div>
+                        Soil Properties
+                    </button><br>
+
+                    <div id="soilProperties" class="input-fields">
+
+                        <div class="section">
+                            <button onclick="toggleFields('soilType', 'arrowSoilType')">
+                                <div id="arrowSoilType" class="arrow"></div>
+                                Soil Type
+                            </button>
+
+                            <div class="section">
+                                <div class="select-group" id="soilType">
+                                    <button id="button" class="button">
+                                        <span id="select-label">Select Soil Type*</span>
+                                        <div id="arrow" class="arrow"></div>
+                                    </button>
+                                    <div class="dropdown hidden" id="soilType">
+                                        <input type="radio" id="clay" name="soilType" value="clay" class="option">
+                                        <label for="clay" class="select-item">Clay</label>
+
+                                        <input type="radio" id="silt" name="soilType" value="silt" class="option">
+                                        <label for="silt" class="select-item">Silt</label>
+
+                                        <input type="radio" id="loam" name="soilType" value="loam" class="option">
+                                        <label for="loam" class="select-item">Loam</label>
+
+                                        <input type="radio" id="sand" name="soilType" value="sand" class="option">
+                                        <label for="sand" class="select-item">Sand</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('soilBearing', 'arrowSoilBearing')">
+                                <div id="arrowSoilBearing" class="arrow"></div>
+                                Soil Bearing Capacity (kPa)
+                            </button>
+
+                            <div class="section">
+                                <div class="select-group" id="soilBearing">
+                                    <button id="button" class="button">
+                                        <span id="select-label">Select Bearing Capacity*</span>
+                                        <div id="arrow" class="arrow"></div>
+                                    </button>
+                                    <div class="dropdown hidden" id="soilBearing">
+                                        <input type="radio" id="kPa1" name="soilBearing" value="kPa1" class="option">
+                                        <label for="kPa1" class="select-item">kPa1</label>
+
+                                        <input type="radio" id="kPa2" name="soilBearing" value="kPa2" class="option">
+                                        <label for="kPa2" class="select-item">kPa2</label>
+
+                                        <input type="radio" id="kPa3" name="soilBearing" value="kPa3" class="option">
+                                        <label for="kPa3" class="select-item">kPa3</label>
+
+                                        <input type="radio" id="kPa4" name="soilBearing" value="kPa4" class="option">
+                                        <label for="kPa4" class="select-item">kPa4</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="toggleFields('buildingInfo', 'arrowBuildingInfo')">
+                        <div id="arrowBuildingInfo" class="arrow"></div>
+                        Building Information
+                    </button><br>
+
+                    <div id="buildingInfo" class="input-fields">
+
+                        <div class="section">
+                            <button onclick="toggleFields('buildingType', 'arrowBuildingType')">
+                                <div id="arrowBuildingType" class="arrow"></div>
+                                Building Type
+                            </button>
+
+                            <div class="section">
+                                <div class="select-group" id="buildingType">
+                                    <button id="button" class="button">
+                                        <span id="select-label">Select Building Type*</span>
+                                        <div id="arrow" class="arrow"></div>
+                                    </button>
+                                    <div class="dropdown hidden" id="buildingType">
+                                        <input type="radio" id="residential" name="buildingType" value="residential"
+                                            class="option">
+                                        <label for="residential" class="select-item">Residential</label>
+
+                                        <input type="radio" id="commercial" name="buildingType" value="commercial"
+                                            class="option">
+                                        <label for="commercial" class="select-item">Commercial</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('numStorey', 'arrowNumStorey')">
+                                <div id="arrowNumStorey" class="arrow"></div>
+                                Number of Storeys
+                            </button>
+
+                            <div class="section">
+                                <div class="select-group" id="numStorey">
+                                    <button id="button" class="button">
+                                        <span id="select-label">Select Number of Storey*</span>
+                                        <div id="arrow" class="arrow"></div>
+                                    </button>
+                                    <div class="dropdown hidden" id="buildingType">
+                                        <input type="radio" id="1storey" name="numStorey" value="1storey"
+                                            class="option">
+                                        <label for="1storey" class="select-item">1-storey Building</label>
+
+                                        <input type="radio" id="2storey" name="numStorey" value="2storey"
+                                            class="option">
+                                        <label for="2storey" class="select-item">2-storey Building</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <button onclick="toggleFields('materialSpecs', 'arrowMaterialSpecs')">
+                                <div id="arrowMaterialSpecs" class="arrow"></div>
+                                Material Specifications
+                            </button>
+
+                            <div class="section">
+                                <div class="select-group" id="materialSpecs">
+                                    <button id="button" class="button">
+                                        <span id="select-label">Select Material Specs*</span>
+                                        <div id="arrow" class="arrow"></div>
+                                    </button>
+                                    <div class="dropdown hidden" id="materialSpecs">
+                                        <input type="radio" id="steel" name="materialSpecs" value="steel"
+                                            class="option">
+                                        <label for="steel" class="select-item">Steel</label>
+
+                                        <input type="radio" id="wood-lm" name="materialSpecs" value="wood-lm"
+                                            class="option">
+                                        <label for="wood-lm" class="select-item">Wood and/or Light Materials</label>
+
+                                        <input type="radio" id="rc" name="materialSpecs" value="rc"
+                                            class="option">
+                                        <label for="rc" class="select-item">Reinforced steel</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="generate-btn">
+                <button>Analyze & Generate</button>
+            </div>
+
+        </div>
+
+        <div class="main">
+            <div class="content">
+                No plan generated yet. Please input values and click the button to analyze & generate.
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
