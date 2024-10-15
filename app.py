@@ -1,8 +1,28 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, flash, redirect
 import os
 import json
+from werkzeug.utils import secure_filename
+
+# Importing coreconstruct features
+
+from floorplantojson import generate_mask_measure_walls_annotate
+from addfeature import update_json_features
 
 app = Flask(__name__)
+app.secret_key = 'wowCoreandConstruct'
+
+# Folder where uploaded files will be stored
+UPLOAD_FOLDER = 'uploads/'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+OUTPUT_DIR='output/'
+
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['OUTPUT_DIR'] = OUTPUT_DIR
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 # Root route to serve the HTML page
 @app.route('/')
@@ -11,13 +31,99 @@ def index():
 
 @app.route('/analyze_generate', methods=['POST'])
 def analyze_generate():
-    # You can access the uploaded file using:
-    uploaded_file = request.files['foundation-plan']  # Assuming the file upload field is used
-    if uploaded_file:
-        # Process the file or any form data here
-        return "File received and analysis started!"
-    else:
-        return "No file uploaded!"
+    print("Form submitted")  # Indicate that the form has been submitted
+
+    # Collect the form data
+    uploaded_file = request.files.get('floor-plan')
+    soil_type = request.form.get('soilType')
+    building_type = request.form.get('buildingType')
+    num_storey = request.form.get('numStorey')
+    material_spec = request.form.get('materialSpecs')
+
+    # Print the values received for debugging
+    print(f"Uploaded File: {uploaded_file.filename if uploaded_file else 'No file uploaded'}")
+    print(f"Soil Type: {soil_type}")
+    print(f"Building Type: {building_type}")
+    print(f"Number of Storeys: {num_storey}")
+    print(f"Material Spec: {material_spec}")
+
+    # Perform backend validation
+    missing_fields = []
+
+    if not uploaded_file:
+        print("Missing: Floor Plan")  # Debugging message
+        missing_fields.append("Floor Plan")
+
+    if not soil_type:
+        print("Missing: Soil Type")  # Debugging message
+        missing_fields.append("Soil Type")
+
+    if not building_type:
+        print("Missing: Building Type")  # Debugging message
+        missing_fields.append("Building Type")
+
+    if not num_storey:
+        print("Missing: Number of Storeys")  # Debugging message
+        missing_fields.append("Number of Storeys")
+
+    if not material_spec:
+        print("Missing: Material Specifications")  # Debugging message
+        missing_fields.append("Material Specifications")
+
+    # If any fields are missing, flash a message and redirect
+    if missing_fields:
+        flash(f"Please fill in the following fields: {', '.join(missing_fields)}")
+        return redirect('/')  # Redirect back to the main page
+    
+    # Check if the file is present and allowed
+    if not allowed_file(uploaded_file.filename):
+        flash('Invalid file type. Please upload an image file (PNG, JPG, JPEG, GIF).')
+        return redirect('/')
+    
+    # 
+    # Putting the file to the upload folder and keeping the original filename
+    # 
+
+    # Sanitize the filename
+    filename = secure_filename(uploaded_file.filename)
+
+    # Create the uploads directory if it doesn't exist
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+
+    # Set the full file path with the original filename
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    # Save the uploaded file with the original name
+    uploaded_file.save(file_path)
+    
+    # 
+    # This is for the Floorplan to JSON Part
+    # 
+    json_output_path = os.path.join(app.config['OUTPUT_DIR'], 'yolov8', 'output.json')
+    os.makedirs(os.path.dirname(json_output_path), exist_ok=True)
+    
+    generate_mask_measure_walls_annotate(file_path, json_output_path)
+    
+    # 
+    # This is for sending the Features such as soil properties etc to the JSON 
+    # 
+    update_json_features(json_output_path, soil_type, building_type, num_storey, material_spec)
+    
+    
+    #     
+    #   This is for the floorplan JSON to foundation JSON  
+    #     
+
+    
+    
+    
+    
+    
+    # Provide feedback
+    flash('File processed and JSON updated successfully!')
+    return redirect('/')
+
 
 @app.route('/drawio')
 def drawio():

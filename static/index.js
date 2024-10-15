@@ -149,3 +149,20 @@ function updateSelectedOption(option, previousSelectedOption) {
     const currentLabel = document.querySelector(`label[for="${option.id}"]`);
     currentLabel.classList.add("selected");
 }
+
+
+function closeFlashMessage(element) {
+    const flashMessage = element.closest('.flash-messages');
+    flashMessage.style.display = 'none'; // Hide the entire flash message container
+  }
+
+  // Auto fade out after 7 seconds
+  setTimeout(function() {
+    var flashMessages = document.querySelector('.flash-messages');
+    if (flashMessages) {
+      flashMessages.style.opacity = '0'; // Start fade out
+      setTimeout(function() {
+        flashMessages.style.display = 'none'; // Hide completely after fading out
+      }, 500); // Wait for the fade-out transition to finish
+    }
+  }, 7000); // 7 seconds before fade starts
