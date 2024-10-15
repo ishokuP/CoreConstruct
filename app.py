@@ -9,6 +9,16 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
+@app.route('/analyze_generate', methods=['POST'])
+def analyze_generate():
+    # You can access the uploaded file using:
+    uploaded_file = request.files['foundation-plan']  # Assuming the file upload field is used
+    if uploaded_file:
+        # Process the file or any form data here
+        return "File received and analysis started!"
+    else:
+        return "No file uploaded!"
+
 @app.route('/drawio')
 def drawio():
     return render_template('drawio.html')
