@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 # Importing coreconstruct features
 
 from floorplantojson import generate_mask_measure_walls_annotate
-from addfeature import update_json_features, transfer_canvas_dimensions
+from addfeature import transfer_canvas_dimensions
 from JSONReinforcement import mainReinforcement
 from foundationJSONtoimage import generate_separate_images
 

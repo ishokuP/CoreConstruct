@@ -173,9 +173,9 @@ def generate_mask_measure_walls_annotate(image_path, json_output_path):
         json.dump(walls_data, json_file, indent=4)
     print(f"Exported wall data to {json_output_path}")
 
-# Example usage
-image_path = "uploads/floorplan.jpg"  # Path to the input image
-json_output_path = 'output/yolov8/output.json'  # Path to the output JSON file
+# # Example usage
+# image_path = "uploads/floorplan.jpg"  # Path to the input image
+# json_output_path = 'output/yolov8/output.json'  # Path to the output JSON file
 
-# Generate the mask, measure the walls, and export to JSON
-generate_mask_measure_walls_annotate(image_path, json_output_path)
+# # Generate the mask, measure the walls, and export to JSON
+# generate_mask_measure_walls_annotate(image_path, json_output_path)
