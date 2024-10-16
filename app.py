@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, flash, redirect,url_for
 import os
 import json
+import numpy as np
 from werkzeug.utils import secure_filename
 
 # Importing coreconstruct features
@@ -9,6 +10,30 @@ from floorplantojson import generate_mask_measure_walls_annotate
 from addfeature import update_json_features
 from JSONReinforcement import mainReinforcement
 from foundationJSONtoimage import generate_separate_images
+
+# Define the mappings
+soil_type_map = {
+    "clay": 1,
+    "silt": 2,
+    "loam": 3,
+    "sand": 4
+}
+
+building_type_map = {
+    "residential": 1,
+    "commercial": 2
+}
+
+num_storey_map = {
+    "1storey": 1,
+    "2storey": 2
+}
+
+material_spec_map = {
+    "steel": 1,
+    "wood-lm": 2,
+    "rc": 3
+}
 
 app = Flask(__name__)
 app.secret_key = 'wowCoreandConstruct'
@@ -125,8 +150,23 @@ def analyze_generate():
     # 
     
     foundationplanjson=os.path.join(app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
-    footingexpandinflation = 40
-    generate_separate_images(foundationplanjson, footingexpandinflation, 50)
+    from ANN import test_model
+    soil_type_value = soil_type_map.get(soil_type)
+    building_type_value = building_type_map.get(building_type)
+    num_storey_value = num_storey_map.get(num_storey)
+    material_spec_value = material_spec_map.get(material_spec)
+    
+    soil_type_value = int(soil_type_value)
+    building_type_value = int(building_type_value)
+    num_storey_value = int(num_storey_value)
+    material_spec_value = int(material_spec_value)
+    
+    single_input = [soil_type_value, material_spec_value, num_storey_value]  # Adjust based on your ANN's input format
+
+    # Call the ANN model with the prepared input
+    annresult = test_model(np.array([single_input]))
+    footingexpandinflation = 75*annresult
+    generate_separate_images(foundationplanjson, footingexpandinflation, 35)
     
     
     foundationplanjson=os.path.join(app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
