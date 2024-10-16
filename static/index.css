@@ -134,6 +134,7 @@ input[type=file]::file-selector-button:hover {
     border: 1px solid #303030;
 }
 
+/* Style for the main container */
 .main {
     padding: 30px;
     background-color: white;
@@ -145,13 +146,38 @@ input[type=file]::file-selector-button:hover {
     font-size: 14px;
     flex-grow: 1;
     overflow: hidden; /* Hide overflow if the content exceeds the container */
-    text-align: center; /* Center the content */
-    
+    text-align: center;
+    max-width: 100%; /* Ensures the container does not exceed its parent width */
+    height: 100%; /* Set a fixed height based on your design */
 }
+
+/* Style for the content */
+.content {
+    text-align: center;
+    width: 100%;
+    height: 100%; /* Make it take the full height of the main container */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Style for the image */
+#generated-image {
+    max-width: 100%;
+    max-height: 100%; /* Ensures the image doesn’t exceed the container height */
+    object-fit: contain; /* Maintains aspect ratio and fits within container */
+    display: none; /* Hidden by default until an image is loaded */
+    border-radius: 5px; /* Optional: rounds the corners of the image */
+}
+
 
 .content {
     text-align: center;
 }
+
+
+
+
 
 .header {
     display: flex;
