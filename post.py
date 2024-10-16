@@ -26,9 +26,13 @@ def expandImg(input_image_path, output_image_path, expansion_amount, fill_color=
     cv2.imwrite(output_image_path, expanded_image)
     print(f'Expanded image saved at {output_image_path}')
 
-def style_columns(column_image_path, output_column_path):
+def style_columns(column_image_path, output_column_path, scale_factor=1.0):
     """
-    Function to style columns with a white fill and black outline.
+    Function to style columns with a white fill and black outline, scaling them based on a percentage multiplier.
+    
+    :param column_image_path: Path to the input column layout image.
+    :param output_column_path: Path to save the styled columns image.
+    :param scale_factor: Multiplier for expanding (>1.0) or shrinking (<1.0) the contours. Default is 1.0 (no scaling).
     """
     # Read the column layout image using OpenCV
     column_image = cv2.imread(column_image_path, cv2.IMREAD_UNCHANGED)
@@ -42,15 +46,32 @@ def style_columns(column_image_path, output_column_path):
     # Create an empty image for the styled columns with transparency
     styled_columns = np.zeros_like(column_image)
 
-    # Draw the columns with a white fill and black outline
+    # Calculate the center of each contour for scaling
     for contour in contours:
-        cv2.drawContours(styled_columns, [contour], -1, (0, 0, 0, 255), 2)  # Black outline
-        cv2.drawContours(styled_columns, [contour], -1, (255, 255, 255, 255), -1)  # White fill
+        # Get the centroid of the contour to scale around it
+        M = cv2.moments(contour)
+        if M["m00"] != 0:
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+        else:
+            cx, cy = 0, 0
+
+        # Scale the contour points relative to the centroid
+        scaled_contour = []
+        for point in contour:
+            x, y = point[0]
+            scaled_x = int(cx + (x - cx) * scale_factor)
+            scaled_y = int(cy + (y - cy) * scale_factor)
+            scaled_contour.append([[scaled_x, scaled_y]])
+        scaled_contour = np.array(scaled_contour, dtype=np.int32)
+
+        # Draw the scaled contour with a white fill and black outline
+        cv2.drawContours(styled_columns, [scaled_contour], -1, (0, 0, 0, 255), 2)  # Black outline
+        cv2.drawContours(styled_columns, [scaled_contour], -1, (255, 255, 255, 255), -1)  # White fill
 
     # Save the styled columns image as PNG
     cv2.imwrite(output_column_path, styled_columns)
     print(f'Styled columns image saved at {output_column_path}')
-
 def combine_images(footing_image_path, wall_image_path, output_path):
     """
     Function to combine the footing and expanded wall images.

@@ -136,7 +136,7 @@ def generate_annotation_layer(data, canvas_width, canvas_height):
 
 
 # Generate separate wall and column images based on JSON coordinates
-def generate_separate_images(json_file, column_expansion_amount, wall_expansion_amount):
+def generate_separate_images(json_file, column_expansion_amount, wall_expansion_amount,column_scale):
     # Load and initialize the model inside the function
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = ConditionalVAE(img_channels=1, latent_dim=128).to(device)
@@ -213,7 +213,7 @@ def generate_separate_images(json_file, column_expansion_amount, wall_expansion_
     expandImg(column_layout_path, footing_output_path, column_expansion_amount)
 
     # Style the columns with white fill and black outline
-    style_columns(column_layout_path, styled_column_output_path)
+    style_columns(column_layout_path, styled_column_output_path, column_scale)
 
     # Combine the footing and expanded wall images
     combine_images(footing_output_path, expanded_wall_output_path, combined_output_path)

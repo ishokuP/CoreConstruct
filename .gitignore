@@ -172,3 +172,6 @@ output/vae/*
 !output/vae/
 
 misc
+
+static/images/*
+!static/images/*

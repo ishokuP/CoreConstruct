@@ -171,13 +171,13 @@ def analyze_generate():
     single_input = [soil_type_value, material_spec_value, num_storey_value] 
     # Call the ANN model with the prepared input
     scale_1,scale_2 = test_model(single_input)
-    footingexpandinflation = 75*scale_2
+    footingexpandinflation = int(85*scale_2)
     
-    generate_separate_images(foundationplanjson, 50, 35)
+    
+    generate_separate_images(foundationplanjson, footingexpandinflation, 38, scale_1)
     
     
     foundationplanjson=os.path.join(app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
-    final_output_path = 'static/images/final_combined.png'  # Save to static/images/
     # Provide feedback and return the image path as JSON
     return jsonify({'image_path': url_for('static', filename=f'images/final_combined.png')})
 
