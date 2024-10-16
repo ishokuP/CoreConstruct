@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 # Importing coreconstruct features
 
 from floorplantojson import generate_mask_measure_walls_annotate
-from addfeature import update_json_features
+from addfeature import update_json_features, transfer_canvas_dimensions
 from JSONReinforcement import mainReinforcement
 from foundationJSONtoimage import generate_separate_images
 
@@ -132,11 +132,7 @@ def analyze_generate():
     
     generate_mask_measure_walls_annotate(file_path, json_output_path)
     
-    # 
-    # This is for sending the Features such as soil properties etc to the JSON 
-    # 
-    update_json_features(json_output_path, soil_type, building_type, num_storey, material_spec)
-    
+
     
     #     
     #   This is for the floorplan JSON to foundation JSON  
@@ -145,11 +141,22 @@ def analyze_generate():
     mainReinforcement()
     
     
+    #
+    # This is for sending the Features such as soil properties etc to the JSON 
+    # 
+    
+    RLjsonfile = os.path.join(app.config['OUTPUT_DIR'], 'RL', 'RLfoundation.json')
+    
+    transfer_canvas_dimensions(json_output_path,RLjsonfile)
+    
     # 
     #   This is for the VAE part 
     # 
     
     foundationplanjson=os.path.join(app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
+    
+    
+    
     from ANN import test_model
     soil_type_value = soil_type_map.get(soil_type)
     building_type_value = building_type_map.get(building_type)
@@ -165,7 +172,8 @@ def analyze_generate():
     # Call the ANN model with the prepared input
     scale_1,scale_2 = test_model(single_input)
     footingexpandinflation = 75*scale_2
-    generate_separate_images(foundationplanjson, footingexpandinflation, 35)
+    
+    generate_separate_images(foundationplanjson, 50, 35)
     
     
     foundationplanjson=os.path.join(app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')

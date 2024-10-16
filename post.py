@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from PIL import Image
+import json
 
 def expandImg(input_image_path, output_image_path, expansion_amount, fill_color=(255, 255, 255, 255)):
     """
@@ -93,7 +93,7 @@ def combine_images(footing_image_path, wall_image_path, output_path):
     cv2.imwrite(output_path, combined_image)
     print(f"Combined image saved at {output_path}")
 
-def add_dashed_outline(image_path, output_path, color=(0, 0, 0, 255), dash_length=10, gap_length=10):
+def add_dashed_outline(image_path, output_path, color=(0, 0, 0, 255), dash_length=14, gap_length=4):
     """
     Function to add a dashed line outline to the combined image, detecting both outer and inner contours.
     """
@@ -178,6 +178,31 @@ def overlay_images_with_background(base_image_path, overlay_image_path, output_p
     print(f'Final combined image with styled columns saved at {output_path}')
 
 
+def overlay_pre_generated_image(base_image_path, overlay_image_path, output_path):
+    """
+    Function to overlay the pre-generated annotation image on top of the final combined image using OpenCV.
+    """
+    # Read the base and overlay images
+    base_image = cv2.imread(base_image_path, cv2.IMREAD_UNCHANGED)
+    overlay_image = cv2.imread(overlay_image_path, cv2.IMREAD_UNCHANGED)
+
+    # Ensure that the images are the same size
+    if base_image.shape[:2] != overlay_image.shape[:2]:
+        overlay_image = cv2.resize(overlay_image, (base_image.shape[1], base_image.shape[0]))
+
+    # Create a mask where the overlay is non-transparent
+    alpha_overlay = overlay_image[:, :, 3] / 255.0
+    for c in range(0, 3):  # Iterate over the color channels (B, G, R)
+        base_image[:, :, c] = (alpha_overlay * overlay_image[:, :, c] +
+                               (1 - alpha_overlay) * base_image[:, :, c])
+
+    # Update the alpha channel
+    base_image[:, :, 3] = np.clip(base_image[:, :, 3] + overlay_image[:, :, 3] * (1 - (base_image[:, :, 3] / 255.0)), 0, 255)
+
+    # Save the final combined image
+    cv2.imwrite(output_path, base_image)
+    print(f'Final combined image with the overlay saved at {output_path}')
+      
 if __name__ == "__main__":
     # Paths to input images and output files
     wall_layout_path = 'output/vae/wall_layout.png'  # Path to the wall layout image
@@ -188,10 +213,15 @@ if __name__ == "__main__":
     combined_output_path = 'output/vae/combined_layout.png'  # Path to save the combined image
     dashed_output_path = 'output/vae/combined_layout_dashed.png'  # Path to save the image with dashed outline
     final_output_path = 'output/vae/final_combined.png'  # Path to save the final image with the white background
+    annotated_output_path = 'output/vae/final_combined_annotated_layout.png'  # Path for annotated image
+    annotation_layer_path = 'output/vae/annotation_layer.png'  # Pre-generated annotation layer
+
+
 
     # Expansion amounts (can be adjusted as needed)
-    column_expansion_amount = 50
-    wall_expansion_amount = 10
+    column_expansion_amount = 90
+    wall_expansion_amount = 35
+    
 
     # Create the expanded wall image (similar to footing)
     expandImg(wall_layout_path, expanded_wall_output_path, wall_expansion_amount)
@@ -210,3 +240,6 @@ if __name__ == "__main__":
 
     # Overlay the styled columns on top of the dashed image and add a white background
     overlay_images_with_background(dashed_output_path, styled_column_output_path, final_output_path)
+
+    # Overlay the pre-generated annotation layer on top of the final combined image
+    overlay_pre_generated_image(final_output_path, annotation_layer_path, annotated_output_path)

@@ -53,6 +53,37 @@ def update_json_features(json_file_path, soil_type, building_type, num_storey, m
         json.dump(data, f, indent=4)
     print("JSON features updated successfully!")
 
+
+
+def transfer_canvas_dimensions(source_json_path, destination_json_path):
+    """
+    Transfers the canvas width and height from the source JSON file to the destination JSON file.
+    """
+    # Load the source JSON data
+    with open(source_json_path, 'r') as source_file:
+        source_data = json.load(source_file)
+    
+    # Extract canvas dimensions from the source file
+    canvas_width = source_data.get('features', {}).get('canvas_width', 0)
+    canvas_height = source_data.get('features', {}).get('canvas_height', 0)
+
+    # Load the destination JSON data
+    with open(destination_json_path, 'r') as destination_file:
+        destination_data = json.load(destination_file)
+
+    # Update or create the 'features' section in the destination JSON
+    if 'features' not in destination_data:
+        destination_data['features'] = {}
+    
+    destination_data['features']['canvas_width'] = canvas_width
+    destination_data['features']['canvas_height'] = canvas_height
+
+    # Write the updated JSON back to the destination file
+    with open(destination_json_path, 'w') as destination_file:
+        json.dump(destination_data, destination_file, indent=4)
+    print("Canvas dimensions transferred successfully!")
+
+
 # Example usage
 if __name__ == "__main__":
     json_file_path = 'output/yolov8/output.json'  # Path to your JSON file

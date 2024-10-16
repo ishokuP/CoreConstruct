@@ -2,9 +2,9 @@ import os
 import json
 import torch
 import torch.nn as nn
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 import numpy as np
-from post import expandImg, style_columns, combine_images, add_dashed_outline, overlay_images_with_background
+from post import expandImg, style_columns, combine_images, add_dashed_outline, overlay_images_with_background, overlay_pre_generated_image
 
 # Conditional VAE Model (same as before)
 class ConditionalVAE(nn.Module):
@@ -87,37 +87,52 @@ def paste_image(layout, img, start_point, end_point=None):
 
 
 # Function to calculate the canvas size based on the min/max coordinates in the JSON and add padding
-def calculate_canvas_size(data, padding_ratio=0.1):
-    min_x, min_y = float('inf'), float('inf')
-    max_x, max_y = float('-inf'), float('-inf')
+def calculate_canvas_size(data):
+    """
+    Retrieves the canvas size from the 'features' section of the JSON data.
+    """
+    # Check if 'features' and 'canvas_width'/'canvas_height' exist in the JSON
+    if 'features' in data and 'canvas_width' in data['features'] and 'canvas_height' in data['features']:
+        canvas_width = data['features']['canvas_width']
+        canvas_height = data['features']['canvas_height']
+        return (canvas_width, canvas_height, 0, 0)
+    else:
+        raise ValueError("Canvas dimensions are not defined in the 'features' section of the JSON data.")
 
-    # Find the min and max coordinates from walls and columns
+
+def generate_annotation_layer(data, canvas_width, canvas_height):
+    """
+    Creates an annotation layer with wall lengths displayed at midpoints.
+    """
+    annotation_layer = Image.new('RGBA', (canvas_width, canvas_height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(annotation_layer)
+
+    # Specify the font size
+    font_size = 20  # Adjust this value as needed for larger or smaller text
+
+    # Load a default PIL font with the specified size
+    try:
+        font = ImageFont.truetype("arial.ttf", font_size)  # Requires arial.ttf installed
+    except IOError:
+        font = ImageFont.load_default()  # Fallback to default font if arial is not available
+
+    # Iterate through the walls in the JSON data
     for wall in data['walls']:
-        start_x, start_y = wall['start_point']
-        end_x, end_y = wall['end_point']
-        min_x, min_y = min(min_x, start_x, end_x), min(min_y, start_y, end_y)
-        max_x, max_y = max(max_x, start_x, end_x), max(max_y, start_y, end_y)
+        start_point = wall['start_point']
+        end_point = wall['end_point']
+        length_cm = wall['length_cm']
 
-    for column in data['columns']:
-        start_x, start_y = column['start_point']
-        length = column['length_cm']
-        height = column['height_cm']
-        end_x, end_y = start_x + length, start_y + height
-        min_x, min_y = min(min_x, start_x, end_x), min(min_y, start_y, end_y)
+        # Calculate the midpoint of the wall
+        midpoint = ((start_point[0] + end_point[0]) // 2, (start_point[1] + end_point[1]) // 2)
 
-    # Calculate width and height
-    width = int(max_x - min_x)
-    height = int(max_y - min_y)
+        # Annotate the wall length on the image at the midpoint
+        draw.text(midpoint, f"{length_cm:.2f} cm", fill=(0, 0, 0, 255), font=font)
 
-    # Calculate padding based on the specified ratio
-    padding_width = int(width * padding_ratio)
-    padding_height = int(height * padding_ratio)
-
-    # Return the new dimensions including padding and updated offsets
-    return (width + 2 * padding_width, 
-            height + 2 * padding_height, 
-            min_x - padding_width, 
-            min_y - padding_height)
+    # Save the annotation layer as a PNG
+    annotation_output_path = 'output/vae/annotation_layer.png'
+    annotation_layer.save(annotation_output_path, "PNG")
+    print(f'Annotation layer saved at {annotation_output_path}')
+    return annotation_output_path
 
 
 # Generate separate wall and column images based on JSON coordinates
@@ -160,6 +175,11 @@ def generate_separate_images(json_file, column_expansion_amount, wall_expansion_
             generated_column = model.decode(z).squeeze().cpu().numpy()
 
         paste_image(column_layout, generated_column, start_point, end_point)
+        
+        
+    # Generate annotation layer
+    annotation_output_path = generate_annotation_layer(data, canvas_width, canvas_height)
+
 
     # Save the separate wall and column images
     wall_output_path = 'output/vae/wall_layout.png'
@@ -168,6 +188,7 @@ def generate_separate_images(json_file, column_expansion_amount, wall_expansion_
     column_layout.save(column_output_path, "PNG")
     print(f'Saved wall image at {wall_output_path}')
     print(f'Saved column image at {column_output_path}')
+    print(f'Saved annotation image at {annotation_output_path}')
     
     
     
@@ -179,8 +200,10 @@ def generate_separate_images(json_file, column_expansion_amount, wall_expansion_
     combined_output_path = 'output/vae/combined_layout.png'  # Path to save the combined image
     dashed_output_path = 'output/vae/combined_layout_dashed.png'  # Path to save the image with dashed outline
     final_output_path = 'static/images/final_combined.png'  # Path to save the final image with the white background
+    annotation_layer_path = 'output/vae/annotation_layer.png'  # Pre-generated annotation layer
+    annotated_output_path = 'static/images/final_combined.png'  # Path for annotated image
 
-    print("hellow ")
+
     # Expansion amounts (can be adjusted as needed)
 
     # Create the expanded wall image (similar to footing)
@@ -200,11 +223,6 @@ def generate_separate_images(json_file, column_expansion_amount, wall_expansion_
 
     # Overlay the styled columns on top of the dashed image and add a white background
     overlay_images_with_background(dashed_output_path, styled_column_output_path, final_output_path)
-
-
-# Main script for generating separate images
-if __name__ == "__main__":
-    json_file = 'testfiles/left (3).json'  # Example JSON file
-
-    # Generate separate wall and column images from the JSON data
-    generate_separate_images(json_file)
+    
+    # Overlay the pre-generated annotation layer on top of the final combined image
+    overlay_pre_generated_image(final_output_path, annotation_layer_path, annotated_output_path)
