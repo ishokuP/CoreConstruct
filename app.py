@@ -125,7 +125,8 @@ def analyze_generate():
     # 
     
     foundationplanjson=os.path.join(app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
-    generate_separate_images(foundationplanjson, 40, 50)
+    footingexpandinflation = 40
+    generate_separate_images(foundationplanjson, footingexpandinflation, 50)
     
     
     foundationplanjson=os.path.join(app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
