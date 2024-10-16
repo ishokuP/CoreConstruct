@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from PIL import Image, ImageDraw, ImageFilter
 import numpy as np
+from post import expandImg, style_columns, combine_images, add_dashed_outline, overlay_images_with_background
 
 # Conditional VAE Model (same as before)
 class ConditionalVAE(nn.Module):
@@ -70,8 +71,12 @@ def paste_image(layout, img, start_point, end_point=None):
     else:
         x2, y2 = x1 + img.width, y1 + img.height
 
+    # Ensure that the width and height are positive
+    width = max(1, int(x2 - x1))
+    height = max(1, int(y2 - y1))
+
     # Resize the image to fit the bounding box
-    img = img.resize((int(x2 - x1), int(y2 - y1)))
+    img = img.resize((width, height))
 
     # Create an alpha mask for transparency
     img = img.convert("RGBA")
@@ -116,7 +121,7 @@ def calculate_canvas_size(data, padding_ratio=0.1):
 
 
 # Generate separate wall and column images based on JSON coordinates
-def generate_separate_images(json_file):
+def generate_separate_images(json_file, column_expansion_amount, wall_expansion_amount):
     # Load and initialize the model inside the function
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = ConditionalVAE(img_channels=1, latent_dim=128).to(device)
@@ -163,6 +168,38 @@ def generate_separate_images(json_file):
     column_layout.save(column_output_path, "PNG")
     print(f'Saved wall image at {wall_output_path}')
     print(f'Saved column image at {column_output_path}')
+    
+    
+    
+    wall_layout_path = 'output/vae/wall_layout.png'  # Path to the wall layout image
+    column_layout_path = 'output/vae/column_layout.png'  # Path to the column layout image
+    footing_output_path = 'output/vae/footing.png'  # Path to save the footing image
+    expanded_wall_output_path = 'output/vae/expanded_wall.png'  # Path to save the expanded wall image
+    styled_column_output_path = 'output/vae/styled_column_layout.png'  # Path to save the styled column image
+    combined_output_path = 'output/vae/combined_layout.png'  # Path to save the combined image
+    dashed_output_path = 'output/vae/combined_layout_dashed.png'  # Path to save the image with dashed outline
+    final_output_path = 'static/images/final_combined.png'  # Path to save the final image with the white background
+
+    print("hellow ")
+    # Expansion amounts (can be adjusted as needed)
+
+    # Create the expanded wall image (similar to footing)
+    expandImg(wall_layout_path, expanded_wall_output_path, wall_expansion_amount)
+
+    # Create the footing from the column layout
+    expandImg(column_layout_path, footing_output_path, column_expansion_amount)
+
+    # Style the columns with white fill and black outline
+    style_columns(column_layout_path, styled_column_output_path)
+
+    # Combine the footing and expanded wall images
+    combine_images(footing_output_path, expanded_wall_output_path, combined_output_path)
+
+    # Add a dashed outline to the combined image
+    add_dashed_outline(combined_output_path, dashed_output_path)
+
+    # Overlay the styled columns on top of the dashed image and add a white background
+    overlay_images_with_background(dashed_output_path, styled_column_output_path, final_output_path)
 
 
 # Main script for generating separate images

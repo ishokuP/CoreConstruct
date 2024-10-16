@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-def create_expanded_image(input_image_path, output_image_path, expansion_amount, fill_color=(255, 255, 255, 255)):
+def expandImg(input_image_path, output_image_path, expansion_amount, fill_color=(255, 255, 255, 255)):
     """
     General function to expand regions in an image and fill them with a specified color.
     This function is used for creating both the wall and footing images.
@@ -95,7 +95,7 @@ def combine_images(footing_image_path, wall_image_path, output_path):
 
 def add_dashed_outline(image_path, output_path, color=(0, 0, 0, 255), dash_length=10, gap_length=10):
     """
-    Function to add a dashed line outline to the combined image.
+    Function to add a dashed line outline to the combined image, detecting both outer and inner contours.
     """
     # Load the combined image
     image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
@@ -104,10 +104,10 @@ def add_dashed_outline(image_path, output_path, color=(0, 0, 0, 255), dash_lengt
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     _, binary_mask = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
 
-    # Find contours in the image
-    contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Find contours in the image using cv2.RETR_TREE to get both outer and inner contours
+    contours, hierarchy = cv2.findContours(binary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Iterate over contours and draw dashed lines
+    # Iterate over contours and draw dashed lines for each
     for contour in contours:
         # Iterate over each point in the contour to draw dashed lines
         for i in range(len(contour) - 1):
@@ -137,7 +137,7 @@ def add_dashed_outline(image_path, output_path, color=(0, 0, 0, 255), dash_lengt
     # Save the image with the dashed outline
     cv2.imwrite(output_path, image)
     print(f'Dashed outline image saved at {output_path}')
-
+    
 def overlay_images_with_background(base_image_path, overlay_image_path, output_path, background_color=(255, 255, 255)):
     """
     Function to overlay the styled column image on top of the dashed image with a white background.
@@ -194,10 +194,10 @@ if __name__ == "__main__":
     wall_expansion_amount = 10
 
     # Create the expanded wall image (similar to footing)
-    create_expanded_image(wall_layout_path, expanded_wall_output_path, wall_expansion_amount)
+    expandImg(wall_layout_path, expanded_wall_output_path, wall_expansion_amount)
 
     # Create the footing from the column layout
-    create_expanded_image(column_layout_path, footing_output_path, column_expansion_amount)
+    expandImg(column_layout_path, footing_output_path, column_expansion_amount)
 
     # Style the columns with white fill and black outline
     style_columns(column_layout_path, styled_column_output_path)
