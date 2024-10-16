@@ -32,8 +32,10 @@ def test_model(input_data):
     
     return output
 
-if __name__ == "_main_":
+if __name__ == "__main__":
     # Example input data (adjust based on your model's expected input format)
     single_input = [1, 2, 3]  # Replace with the actual input format expected by your model
+    print("TRUE")
+    
     result = test_model(single_input)
     print(f"Test input: {single_input}, Model output: {result}")
