@@ -2,7 +2,7 @@ import os
 import json
 import torch
 import torch.nn as nn
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 import numpy as np
 
 # Conditional VAE Model (same as before)
@@ -70,15 +70,19 @@ def paste_image(layout, img, start_point, end_point=None):
     else:
         x2, y2 = x1 + img.width, y1 + img.height
 
-    # Cast coordinates to integers before resizing
-    img = img.resize((int(x2 - x1), int(y2 - y1)))  # Resize image to fit between start and end points
+    # Resize the image to fit the bounding box
+    img = img.resize((int(x2 - x1), int(y2 - y1)))
 
-    # Paste the image on the layout at the specified location
-    layout.paste(img, (x1, y1, int(x2), int(y2)))
+    # Create an alpha mask for transparency
+    img = img.convert("RGBA")
+    alpha_mask = img.split()[-1]
+
+    # Paste using the alpha mask to maintain transparency
+    layout.paste(img, (x1, y1), mask=alpha_mask)
 
 
-# Function to calculate the canvas size based on the min/max coordinates in the JSON
-def calculate_canvas_size(data):
+# Function to calculate the canvas size based on the min/max coordinates in the JSON and add padding
+def calculate_canvas_size(data, padding_ratio=0.1):
     min_x, min_y = float('inf'), float('inf')
     max_x, max_y = float('-inf'), float('-inf')
 
@@ -95,69 +99,75 @@ def calculate_canvas_size(data):
         height = column['height_cm']
         end_x, end_y = start_x + length, start_y + height
         min_x, min_y = min(min_x, start_x, end_x), min(min_y, start_y, end_y)
-        max_x, max_y = max(max_x, start_x, end_x), max(max_y, start_y, end_y)
 
-    # Calculate canvas size, adding a margin if necessary
+    # Calculate width and height
     width = int(max_x - min_x)
     height = int(max_y - min_y)
-    
-    return width, height, min_x, min_y
+
+    # Calculate padding based on the specified ratio
+    padding_width = int(width * padding_ratio)
+    padding_height = int(height * padding_ratio)
+
+    # Return the new dimensions including padding and updated offsets
+    return (width + 2 * padding_width, 
+            height + 2 * padding_height, 
+            min_x - padding_width, 
+            min_y - padding_height)
 
 
 # Generate separate wall and column images based on JSON coordinates
 def generate_separate_images(json_file):
-    model="models/vae_final.pth"
-    model.eval()  # Set model to evaluation mode
+    # Load and initialize the model inside the function
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = ConditionalVAE(img_channels=1, latent_dim=128).to(device)
+    model_path = 'models/vae/vae_final.pth'  # Define the path to the model here
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+
     with open(json_file, 'r') as f:
         data = json.load(f)
 
-    # Calculate the dynamic canvas size
+    # Calculate the dynamic canvas size with padding
     canvas_width, canvas_height, offset_x, offset_y = calculate_canvas_size(data)
 
-    # Create blank canvases for walls and columns
-    wall_layout = Image.new('L', (canvas_width, canvas_height), 255)
-    column_layout = Image.new('L', (canvas_width, canvas_height), 255)
+    # Create blank canvases for walls and columns with transparency
+    wall_layout = Image.new('RGBA', (canvas_width, canvas_height), (0, 0, 0, 0))  # Fully transparent background
+    column_layout = Image.new('RGBA', (canvas_width, canvas_height), (0, 0, 0, 0))  # Fully transparent background
 
     # Generate and place walls
     for wall in data['walls']:
         start_point = (wall['start_point'][0] - offset_x, wall['start_point'][1] - offset_y)
         end_point = (wall['end_point'][0] - offset_x, wall['end_point'][1] - offset_y)
 
-        z = torch.randn(1, 128).cuda()  # Random latent vector
+        z = torch.randn(1, 128).to(device)
         with torch.no_grad():
-            generated_wall = model.decode(z).squeeze().cpu().numpy()  # Generate wall
+            generated_wall = model.decode(z).squeeze().cpu().numpy()
 
-        paste_image(wall_layout, generated_wall, start_point, end_point)  # Resize and paste wall
+        paste_image(wall_layout, generated_wall, start_point, end_point)
 
     # Generate and place columns
     for column in data['columns']:
         start_point = (column['start_point'][0] - offset_x, column['start_point'][1] - offset_y)
         end_point = (start_point[0] + column['length_cm'], start_point[1] + column['height_cm'])
 
-        z = torch.randn(1, 128).cuda()  # Random latent vector
+        z = torch.randn(1, 128).to(device)
         with torch.no_grad():
-            generated_column = model.decode(z).squeeze().cpu().numpy()  # Generate column
+            generated_column = model.decode(z).squeeze().cpu().numpy()
 
-        paste_image(column_layout, generated_column, start_point, end_point)  # Resize and paste column
+        paste_image(column_layout, generated_column, start_point, end_point)
 
     # Save the separate wall and column images
-    wall_output_path = 'wall_layout.png'
-    column_output_path = 'column_layout.png'
-    wall_layout.save(wall_output_path)
-    column_layout.save(column_output_path)
+    wall_output_path = 'output/vae/wall_layout.png'
+    column_output_path = 'output/vae/column_layout.png'
+    wall_layout.save(wall_output_path, "PNG")
+    column_layout.save(column_output_path, "PNG")
     print(f'Saved wall image at {wall_output_path}')
     print(f'Saved column image at {column_output_path}')
 
 
 # Main script for generating separate images
 if __name__ == "__main__":
-    model_path = 'models/vae_final.pth'  # Path to the trained VAE model
     json_file = 'testfiles/left (3).json'  # Example JSON file
 
-    # Initialize VAE and load trained weights
-    model = ConditionalVAE(img_channels=1, latent_dim=128).cuda()
-    model.load_state_dict(torch.load(model_path, map_location=torch.device('cuda')))
-    model.eval()
-
-    # Generate separate wall and column images from the trained VAE model and JSON data
+    # Generate separate wall and column images from the JSON data
     generate_separate_images(json_file)

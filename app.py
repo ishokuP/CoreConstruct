@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, flash, redirect
+from flask import Flask, render_template, request, jsonify, flash, redirect,url_for
 import os
 import json
 from werkzeug.utils import secure_filename
@@ -7,6 +7,8 @@ from werkzeug.utils import secure_filename
 
 from floorplantojson import generate_mask_measure_walls_annotate
 from addfeature import update_json_features
+# from floorJSONtofoundationJSON import 
+from foundationJSONtoimage import generate_separate_images
 
 app = Flask(__name__)
 app.secret_key = 'wowCoreandConstruct'
@@ -118,11 +120,19 @@ def analyze_generate():
     
     
     
+    # 
+    #   This is for the VAE part 
+    # 
+    
+    foundationplanjson=os.path.join(app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
+    generate_separate_images(foundationplanjson)
     
     
-    # Provide feedback
-    flash('File processed and JSON updated successfully!')
-    return redirect('/')
+    
+    final_output_path = 'static/images/final_combined.png'  # Save to static/images/
+    # Provide feedback and return the image path as JSON
+    return jsonify({'image_path': url_for('static', filename=f'images/final_combined.png')})
+
 
 
 @app.route('/drawio')

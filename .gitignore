@@ -164,9 +164,11 @@ cython_debug/
 # Ignore all files inside output/rl and output/yolov8, but keep the directories
 output/rl/*
 output/yolov8/*
+output/vae/*
 
 # Make sure the directories themselves are tracked
 !output/rl/
 !output/yolov8/
+!output/vae/
 
 misc

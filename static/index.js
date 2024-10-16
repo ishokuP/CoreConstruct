@@ -166,3 +166,36 @@ function closeFlashMessage(element) {
       }, 500); // Wait for the fade-out transition to finish
     }
   }, 7000); // 7 seconds before fade starts
+
+  document.querySelector('form').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent form from submitting normally
+
+    const formData = new FormData(this);
+
+    // Use Fetch API to submit the form data via AJAX
+    fetch('/analyze_generate', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.image_path) {
+            const imgElement = document.getElementById('generated-image');
+            const noPlanMessage = document.getElementById('no-plan-message');
+            imgElement.src = data.image_path;
+            imgElement.style.display = 'block';
+            noPlanMessage.style.display = 'none';
+
+            // Scale the image to fit within the container
+            imgElement.onload = function() {
+                const maxWidth = document.querySelector('.main').clientWidth;
+                const maxHeight = document.querySelector('.main').clientHeight;
+                if (imgElement.naturalWidth > maxWidth || imgElement.naturalHeight > maxHeight) {
+                    imgElement.style.width = maxWidth + 'px';
+                    imgElement.style.height = 'auto';
+                }
+            };
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});

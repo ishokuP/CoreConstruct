@@ -144,6 +144,9 @@ input[type=file]::file-selector-button:hover {
     color: #303030;
     font-size: 14px;
     flex-grow: 1;
+    overflow: hidden; /* Hide overflow if the content exceeds the container */
+    text-align: center; /* Center the content */
+    
 }
 
 .content {
@@ -477,4 +480,11 @@ button#button.button {
     color: #a94442;
     cursor: pointer;
     padding-left: 10px;
+}
+
+#generated-image {
+    max-width: 100%; /* Makes the image fit within the width of the container */
+    height: auto; /* Keeps the aspect ratio */
+    border: 1px solid #ccc; /* Optional: add a border to the image */
+    margin-top: 20px; /* Optional: add space above the image */
 }
