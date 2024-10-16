@@ -220,6 +220,10 @@ form{
     text-align: left;
 }
 
+button.indented-button {
+    background-color: #727BAD;
+}
+
 .form-container {
     font-family: 'Ramabhadra';
     font-weight: 400;
