@@ -161,11 +161,10 @@ def analyze_generate():
     num_storey_value = int(num_storey_value)
     material_spec_value = int(material_spec_value)
     
-    single_input = [soil_type_value, material_spec_value, num_storey_value]  # Adjust based on your ANN's input format
-
+    single_input = [soil_type_value, material_spec_value, num_storey_value] 
     # Call the ANN model with the prepared input
-    annresult = test_model(single_input)
-    footingexpandinflation = 75*annresult
+    scale_1,scale_2 = test_model(single_input)
+    footingexpandinflation = 75*scale_2
     generate_separate_images(foundationplanjson, footingexpandinflation, 35)
     
     

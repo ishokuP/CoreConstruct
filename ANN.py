@@ -30,7 +30,9 @@ def test_model(input_data):
     hidden_outputs = forward_pass_hidden(W1, b1, input_data)
     output = forward_pass_output(W2, b2, hidden_outputs)
     
-    return output
+    # Access the two values separately
+    output_1, output_2 = output[0], output[1]
+    return output_1, output_2
 
 if __name__ == "__main__":
     # Example input data (adjust based on your model's expected input format)
