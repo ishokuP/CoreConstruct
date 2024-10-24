@@ -2,11 +2,13 @@ import os
 import json
 import torch
 import torch.nn as nn
-from PIL import Image, ImageDraw, ImageFont
+import cv2
 import numpy as np
-from post import expandImg, style_columns, combine_images, add_dashed_outline, overlay_images_with_background, overlay_pre_generated_image
-
+from post import expand_columns, create_dashed_grid_cross_layer, create_footing_layer, add_padding_to_walls, create_manual_footing_annotation_layer, create_wall_annotation_layer, create_expanded_column_annotation_layer, combine_all_layers, combine_layers_and_add_dashed_outline
+# TODO: post
 # Conditional VAE Model (same as before)
+
+
 class ConditionalVAE(nn.Module):
     def __init__(self, img_channels=1, latent_dim=128):
         super(ConditionalVAE, self).__init__()
@@ -35,7 +37,8 @@ class ConditionalVAE(nn.Module):
             nn.ReLU(),
             nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, img_channels, kernel_size=4, stride=2, padding=1),
+            nn.ConvTranspose2d(
+                64, img_channels, kernel_size=4, stride=2, padding=1),
             nn.Sigmoid()
         )
 
@@ -59,170 +62,214 @@ class ConditionalVAE(nn.Module):
         z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
 
-
 # Helper function to paste images on the layout with appropriate resizing
+
+
 def paste_image(layout, img, start_point, end_point=None):
-    img = Image.fromarray((img * 255).astype(np.uint8))  # Convert to PIL image
-
-    # Calculate the bounding box for the image placement
     x1, y1 = start_point
-    if end_point:
-        x2, y2 = end_point
-    else:
-        x2, y2 = x1 + img.width, y1 + img.height
+    x2, y2 = end_point
 
-    # Ensure that the width and height are positive
-    width = max(1, int(x2 - x1))
-    height = max(1, int(y2 - y1))
+    # Calculate width and height for resizing
+    width = max(1, x2 - x1)  # Ensure width is at least 1
+    height = max(1, y2 - y1)  # Ensure height is at least 1
 
-    # Resize the image to fit the bounding box
-    img = img.resize((width, height))
+    # Resize image to fit within the specified region
+    img = (img * 255).astype(np.uint8)  # Convert to 8-bit
+    img = cv2.resize(img, (width, height))
 
-    # Create an alpha mask for transparency
-    img = img.convert("RGBA")
-    alpha_mask = img.split()[-1]
+    # Ensure the image has an alpha channel
+    if len(img.shape) == 2:
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGRA)
+    elif img.shape[2] == 1:
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGRA)
 
-    # Paste using the alpha mask to maintain transparency
-    layout.paste(img, (x1, y1), mask=alpha_mask)
+    # Paste the image on the layout at the specified location
+    layout[y1:y2, x1:x2, :] = img
+
+# Generate solid rectangles for walls
 
 
-# Function to calculate the canvas size based on the min/max coordinates in the JSON and add padding
-def calculate_canvas_size(data):
+def draw_solid_wall(layout, start_point, end_point):
     """
-    Retrieves the canvas size from the 'features' section of the JSON data.
+    Draw a solid wall as a filled rectangle.
     """
-    # Check if 'features' and 'canvas_width'/'canvas_height' exist in the JSON
-    if 'features' in data and 'canvas_width' in data['features'] and 'canvas_height' in data['features']:
-        canvas_width = data['features']['canvas_width']
-        canvas_height = data['features']['canvas_height']
-        return (canvas_width, canvas_height, 0, 0)
-    else:
-        raise ValueError("Canvas dimensions are not defined in the 'features' section of the JSON data.")
+    x1, y1 = start_point
+    x2, y2 = end_point
+
+    # Draw a filled rectangle (white) with a black border
+    cv2.rectangle(layout, (x1, y1), (x2, y2),
+                  (255, 255, 255, 255), thickness=-1)  # Fill
+    cv2.rectangle(layout, (x1, y1), (x2, y2),
+                  (0, 0, 0, 255), thickness=2)  # Border
+
+# Generate separate images for walls and columns based on the JSON file
 
 
-def generate_annotation_layer(data, canvas_width, canvas_height):
-    """
-    Creates an annotation layer with wall lengths displayed at midpoints.
-    """
-    annotation_layer = Image.new('RGBA', (canvas_width, canvas_height), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(annotation_layer)
-
-    # Specify the font size
-    font_size = 20  # Adjust this value as needed for larger or smaller text
-
-    # Load a default PIL font with the specified size
-    try:
-        font = ImageFont.truetype("arial.ttf", font_size)  # Requires arial.ttf installed
-    except IOError:
-        font = ImageFont.load_default()  # Fallback to default font if arial is not available
-
-    # Iterate through the walls in the JSON data
-    for wall in data['walls']:
-        start_point = wall['start_point']
-        end_point = wall['end_point']
-        length_cm = wall['length_cm']
-
-        # Calculate the midpoint of the wall
-        midpoint = ((start_point[0] + end_point[0]) // 2, (start_point[1] + end_point[1]) // 2)
-
-        # Annotate the wall length on the image at the midpoint
-        draw.text(midpoint, f"{length_cm:.2f} cm", fill=(0, 0, 0, 255), font=font)
-
-    # Save the annotation layer as a PNG
-    annotation_output_path = 'output/vae/annotation_layer.png'
-    annotation_layer.save(annotation_output_path, "PNG")
-    print(f'Annotation layer saved at {annotation_output_path}')
-    return annotation_output_path
-
-
-# Generate separate wall and column images based on JSON coordinates
-def generate_separate_images(json_file, column_expansion_amount, wall_expansion_amount,column_scale):
-    # Load and initialize the model inside the function
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = ConditionalVAE(img_channels=1, latent_dim=128).to(device)
-    model_path = 'models/vae/vae_final.pth'  # Define the path to the model here
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.eval()
-
+def generate_layout(model, json_file):
+    model.eval()  # Set model to evaluation mode
     with open(json_file, 'r') as f:
         data = json.load(f)
 
-    # Calculate the dynamic canvas size with padding
-    canvas_width, canvas_height, offset_x, offset_y = calculate_canvas_size(data)
+    # Get fixed canvas width and height from JSON features
+    canvas_width = data['features']['canvas_width']
+    canvas_height = data['features']['canvas_height']
 
-    # Create blank canvases for walls and columns with transparency
-    wall_layout = Image.new('RGBA', (canvas_width, canvas_height), (0, 0, 0, 0))  # Fully transparent background
-    column_layout = Image.new('RGBA', (canvas_width, canvas_height), (0, 0, 0, 0))  # Fully transparent background
+    # Create separate canvases for walls and columns (transparent background)
+    wall_layout = np.zeros((canvas_height, canvas_width, 4), dtype=np.uint8)
+    column_layout = np.zeros((canvas_height, canvas_width, 4), dtype=np.uint8)
 
     # Generate and place walls
     for wall in data['walls']:
-        start_point = (wall['start_point'][0] - offset_x, wall['start_point'][1] - offset_y)
-        end_point = (wall['end_point'][0] - offset_x, wall['end_point'][1] - offset_y)
+        start_point = (wall['start_point'][0], wall['start_point'][1])
+        end_point = (wall['end_point'][0], wall['end_point'][1])
 
-        z = torch.randn(1, 128).to(device)
-        with torch.no_grad():
-            generated_wall = model.decode(z).squeeze().cpu().numpy()
-
-        paste_image(wall_layout, generated_wall, start_point, end_point)
+        # Draw a solid wall rectangle
+        draw_solid_wall(wall_layout, start_point, end_point)
 
     # Generate and place columns
     for column in data['columns']:
-        start_point = (column['start_point'][0] - offset_x, column['start_point'][1] - offset_y)
-        end_point = (start_point[0] + column['length_cm'], start_point[1] + column['height_cm'])
+        start_point = (column['start_point'][0], column['start_point'][1])
+        end_point = (column['end_point'][0], column['end_point'][1])
 
-        z = torch.randn(1, 128).to(device)
+        z = torch.randn(1, 128).cuda()  # Random latent vector
         with torch.no_grad():
-            generated_column = model.decode(z).squeeze().cpu().numpy()
+            generated_column = model.decode(
+                z).squeeze().cpu().numpy()  # Generate column
 
-        paste_image(column_layout, generated_column, start_point, end_point)
-        
-        
-    # Generate annotation layer
-    annotation_output_path = generate_annotation_layer(data, canvas_width, canvas_height)
+        paste_image(column_layout, generated_column, start_point,
+                    end_point)  # Paste column on the layout
+
+    # Save wall and column layouts as separate images with transparency
+    wall_output_path = 'output/vae/generated_walls.png'
+    column_output_path = 'output/vae/generated_columns.png'
+    cv2.imwrite(wall_output_path, wall_layout)
+    cv2.imwrite(column_output_path, column_layout)
+
+    print(f'Wall layout saved at {wall_output_path}')
+    print(f'Column layout saved at {column_output_path}')
+
+# Load the trained VAE model and generate layout based on JSON
 
 
-    # Save the separate wall and column images
-    wall_output_path = 'output/vae/wall_layout.png'
-    column_output_path = 'output/vae/column_layout.png'
-    wall_layout.save(wall_output_path, "PNG")
-    column_layout.save(column_output_path, "PNG")
-    print(f'Saved wall image at {wall_output_path}')
-    print(f'Saved column image at {column_output_path}')
-    print(f'Saved annotation image at {annotation_output_path}')
+def generateFoundationPlan(json_file, model_path='models/vae/vae_final.pth'):
+    # Initialize VAE and load trained weights
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    model = ConditionalVAE(img_channels=1, latent_dim=128).to(device)
+    model.load_state_dict(torch.load(
+        model_path, map_location=device, weights_only=True)
+                          )
+    model.eval()
+
+    # Generate layout based on the input JSON file
+    generate_layout(model, json_file)
+
+    column_image = 'output/vae/generated_columns.png'  # Input column image
+    expanded_output_path = 'output/vae/expanded_columns.png'  # Output styled column layer
+
+
+
+
+    # TODO: Honestly fix this part up its very scuffed for now
+    expansion_amount = 10  # Expansion amount in pixels
+    conversion_factor = 6.923  # Example conversion factor (cm/px)
+    offset = 10  # Offset to place the annotation slightly above the expanded column
+
+    # Expand the columns
+    expand_columns(column_image, expanded_output_path, expansion_amount)
+
+    footing_output = 'output/vae/footing_layer_no_outline.png'  # Output footing layer
+    expansion_amount = 50  # Example expansion amount in pixels
+
+    # Create the footing layer by expanding the columns
+    create_footing_layer(column_image, footing_output, expansion_amount)
+
+    wall_image_path = 'output/vae/generated_walls.png'  # Input wall image
+    output_path = 'output/vae/padded_walls_no_outline.png'  # Output padded wall layer
+    padding_amount = 10  # Example padding amount in pixels
+
+    # Add padding to the wall lines
+    add_padding_to_walls(wall_image_path, output_path, padding_amount)
+
+    json_file = 'output/RL/RLFoundation.json'  # Input JSON file
+    output_path = 'output/vae/wall_annotation_layer.png'  # Output annotation layer
+    conversion_factor = 1  # Conversion factor for units (e.g., 6.923 cm/px)
+
+    # Create the wall annotation layer from the JSON data
+    create_wall_annotation_layer(json_file, output_path, conversion_factor)
+
+    # Input expanded column (footing) image
+    expanded_column_image = 'output/vae/footing_layer_no_outline.png'
+    output_path = 'output/vae/manual_footing_annotation_layer.png'  # Output annotation layer
+    conversion_factor = 6.923  # Example conversion factor (cm/px)
+    offset = 10  # Offset to place the annotation slightly above the footing
+
+    # Create the footing annotation layer by manually calculating the dimensions
+    create_manual_footing_annotation_layer(
+        expanded_column_image, output_path, conversion_factor, offset)
+
+    column_image = 'output/vae/generated_columns.png'  # Input column image
+    annotation_output_path = 'output/vae/manual_column_annotation_layer.png'  # Output annotation layer
+    conversion_factor = 6.923  # Example conversion factor (cm/px)
+    offset = 10  # Offset to place the annotation slightly above the column
+
+    # Create the annotation layer for the expanded columns
+    create_expanded_column_annotation_layer(
+        expanded_output_path, annotation_output_path, conversion_factor, offset)
     
     
-    
-    wall_layout_path = 'output/vae/wall_layout.png'  # Path to the wall layout image
-    column_layout_path = 'output/vae/column_layout.png'  # Path to the column layout image
-    footing_output_path = 'output/vae/footing.png'  # Path to save the footing image
-    expanded_wall_output_path = 'output/vae/expanded_wall.png'  # Path to save the expanded wall image
-    styled_column_output_path = 'output/vae/styled_column_layout.png'  # Path to save the styled column image
-    combined_output_path = 'output/vae/combined_layout.png'  # Path to save the combined image
-    dashed_output_path = 'output/vae/combined_layout_dashed.png'  # Path to save the image with dashed outline
-    final_output_path = 'static/images/final_combined.png'  # Path to save the final image with the white background
-    annotation_layer_path = 'output/vae/annotation_layer.png'  # Pre-generated annotation layer
-    annotated_output_path = 'static/images/final_combined.png'  # Path for annotated image
+    output_path = 'output/vae/black_dashed_grid_cross_marker_layer.png'
+
+    # Path to the input JSON file
+    json_file = 'output/RL/RLFoundation.json'  # Replace with your actual file path
+
+    # Open and read the JSON file
+    try:
+        with open(json_file, 'r') as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        print(f"Error: The file '{json_file}' was not found.")
+        exit(1)
+    except json.JSONDecodeError:
+        print(f"Error: Failed to decode JSON from '{json_file}'.")
+        exit(1)
+
+    # Extract the canvas width and height from the JSON data
+    canvas_width = data.get('features', {}).get('canvas_width', None)
+    canvas_height = data.get('features', {}).get('canvas_height', None)
+
+    # Create the grid-like cross marker layer with black dashed lines from the JSON data
+    create_dashed_grid_cross_layer(
+        json_file, output_path, canvas_width, canvas_height)
+
+    footing_path = 'output/vae/footing_layer_no_outline.png'  # Input footing layer
+    padded_walls_path = 'output/vae/padded_walls_no_outline.png'  # Input padded walls layer
+    output_path = 'output/vae/combined_layer_with_dashed_outline.png'  # Output combined layer
+
+    # Combine layers and add a dashed outline
+    combine_layers_and_add_dashed_outline(
+        footing_path, padded_walls_path, output_path)
+
+    layers = [
+        'output/vae/wall_annotation_layer.png',  # Topmost layer
+        'output/vae/manual_footing_annotation_layer.png',
+        'output/vae/manual_column_annotation_layer.png',
+        'output/vae/black_dashed_grid_cross_marker_layer.png',
+        'output/vae/expanded_columns.png',
+        'output/vae/combined_layer_with_dashed_outline.png'  # Bottommost layer
+    ]
+
+    output_path = 'static/images/final_combined_image.png'  # Output final image
+    canvas_size = (canvas_width, canvas_height)  # Example canvas size from JSON features
+
+    # Combine all layers from top to bottom with a white background
+    combine_all_layers(layers, output_path, canvas_size)
 
 
-    # Expansion amounts (can be adjusted as needed)
+# Main script for generating layout
+# if __name__ == "__main__":
+#     model_path = 'vae_weights/vae_final.pth'  # Path to the trained VAE model
+#     json_file = 'output/RL/RLFoundation.json'  # Example JSON file
 
-    # Create the expanded wall image (similar to footing)
-    expandImg(wall_layout_path, expanded_wall_output_path, wall_expansion_amount)
-
-    # Create the footing from the column layout
-    expandImg(column_layout_path, footing_output_path, column_expansion_amount)
-
-    # Style the columns with white fill and black outline
-    style_columns(column_layout_path, styled_column_output_path, column_scale)
-
-    # Combine the footing and expanded wall images
-    combine_images(footing_output_path, expanded_wall_output_path, combined_output_path)
-
-    # Add a dashed outline to the combined image
-    add_dashed_outline(combined_output_path, dashed_output_path)
-
-    # Overlay the styled columns on top of the dashed image and add a white background
-    overlay_images_with_background(dashed_output_path, styled_column_output_path, final_output_path)
-    
-    # Overlay the pre-generated annotation layer on top of the final combined image
-    overlay_pre_generated_image(final_output_path, annotation_layer_path, annotated_output_path)
+#     # Generate layout from the trained VAE model and JSON data
+#     generateFoundationPlan(json_file)

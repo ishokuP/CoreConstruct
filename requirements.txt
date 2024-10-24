@@ -1,7 +1,7 @@
 # requirements.txt
 
 absl-py==2.1.0
-ale-py==0.8.1
+ale-py==0.9.0
 AutoROM==0.6.1
 AutoROM.accept-rom-license==0.6.1
 blinker==1.8.2

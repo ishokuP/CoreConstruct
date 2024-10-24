@@ -165,13 +165,15 @@ cython_debug/
 output/rl/*
 output/yolov8/*
 output/vae/*
+static/images/*
 
 # Make sure the directories themselves are tracked
 !output/rl/
 !output/yolov8/
 !output/vae/
+!static/images/
 
 misc
 
-static/images/*
-!static/images/*
+
+

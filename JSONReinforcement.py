@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from RL_Module import preprocess_floor_data, generate_foundation_plan, visualize_foundation_plan
 
 # Set directories and paths
-floor_folder = 'output/yolov8'
+floor_folder = 'output/yolov8/cleanedJSON'
 model_path = 'models/reinforcement_learning/rl_model'
 output_json_path =  'output/RL/RLFoundation.json'
 
