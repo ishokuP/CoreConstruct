@@ -12,7 +12,7 @@ def process_image(image_path, output_image_path, json_output_path, mask_output_p
     save the annotated image, generate a black-and-white mask, and save JSON.
     """
     # Load environment variables from .env file
-    load_dotenv()
+    load_dotenv(override=True)
 
     # Retrieve environment variables
     api_key = os.environ.get('ROBOFLOW_API_KEY')
