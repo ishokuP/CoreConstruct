@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import cv2
 import numpy as np
-from post import expand_columns, create_dashed_grid_cross_layer, create_footing_layer, add_padding_to_walls, create_manual_footing_annotation_layer, create_wall_annotation_layer, create_expanded_column_annotation_layer, combine_all_layers, combine_layers_and_add_dashed_outline
+from post import add_padding_to_json, expand_columns, create_dashed_grid_cross_layer, create_footing_layer, add_padding_to_walls, create_manual_footing_annotation_layer, create_wall_annotation_layer, create_expanded_column_annotation_layer, combine_all_layers, combine_layers_and_add_dashed_outline
 # TODO: post
 # Conditional VAE Model (same as before)
 
@@ -104,6 +104,22 @@ def draw_solid_wall(layout, start_point, end_point):
 
 # Generate separate images for walls and columns based on the JSON file
 
+def add_padding(image, padding_percentage=0.3):
+    """
+    Adds padding around the image by a given percentage.
+    """
+    height, width = image.shape[:2]
+
+    # Calculate padding dimensions
+    pad_h = int(height * padding_percentage)
+    pad_w = int(width * padding_percentage)
+
+    # Add padding to the image
+    padded_image = cv2.copyMakeBorder(
+        image, pad_h, pad_h, pad_w, pad_w, cv2.BORDER_CONSTANT, value=[0, 0, 0, 0]
+    )
+    return padded_image, pad_w, pad_h
+
 
 def generate_layout(model, json_file):
     model.eval()  # Set model to evaluation mode
@@ -139,11 +155,16 @@ def generate_layout(model, json_file):
         paste_image(column_layout, generated_column, start_point,
                     end_point)  # Paste column on the layout
 
+    # Add 30% padding to the wall and column layouts
+    wall_layout_padded, pad_w, pad_h = add_padding(wall_layout, padding_percentage=0.3)
+    column_layout_padded, _, _ = add_padding(column_layout, padding_percentage=0.3)
+    
+    
     # Save wall and column layouts as separate images with transparency
     wall_output_path = 'output/vae/generated_walls.png'
     column_output_path = 'output/vae/generated_columns.png'
-    cv2.imwrite(wall_output_path, wall_layout)
-    cv2.imwrite(column_output_path, column_layout)
+    cv2.imwrite(wall_output_path, wall_layout_padded)
+    cv2.imwrite(column_output_path, column_layout_padded)
 
     print(f'Wall layout saved at {wall_output_path}')
     print(f'Column layout saved at {column_output_path}')
@@ -151,7 +172,7 @@ def generate_layout(model, json_file):
 # Load the trained VAE model and generate layout based on JSON
 
 
-def generateFoundationPlan(json_file, model_path='models/vae/vae_final.pth'):
+def generateFoundationPlan(json_file,column_scale, footing_scale, model_path='models/vae/vae_final.pth'):
     # Initialize VAE and load trained weights
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -164,106 +185,76 @@ def generateFoundationPlan(json_file, model_path='models/vae/vae_final.pth'):
     # Generate layout based on the input JSON file
     generate_layout(model, json_file)
 
-    column_image = 'output/vae/generated_columns.png'  # Input column image
-    expanded_output_path = 'output/vae/expanded_columns.png'  # Output styled column layer
 
+    # Input and output file paths
+    column_image = 'output/vae/generated_columns.png'
+    expanded_columns_output = 'output/vae/expanded_columns.png'
+    footing_output = 'output/vae/footing_layer_no_outline.png'
+    wall_image_path = 'output/vae/generated_walls.png'
+    padded_walls_output = 'output/vae/padded_walls_no_outline.png'
+    json_file_path = 'output/RL/RLFoundation.json'
+    padded_json_output = 'output/RL/RLFoundationPadded.json'
+    wall_annotation_output = 'output/vae/wall_annotation_layer.png'
+    footing_annotation_output = 'output/vae/manual_footing_annotation_layer.png'
+    column_annotation_output = 'output/vae/manual_column_annotation_layer.png'
+    grid_cross_output = 'output/vae/black_dashed_grid_cross_marker_layer.png'
+    combined_layer_output = 'output/vae/combined_layer_with_dashed_outline.png'
+    final_combined_output = 'static/images/final_combined_image.png'
 
-
-
-    # TODO: Honestly fix this part up its very scuffed for now
-    expansion_amount = 10  # Expansion amount in pixels
+    # Parameters
+    expansion_amount_columns = int(10 * column_scale)
+    expansion_amount_footing = int(90  * footing_scale)
+    padding_amount_walls = 40
     conversion_factor = 6.923  # Example conversion factor (cm/px)
-    offset = 10  # Offset to place the annotation slightly above the expanded column
+    offset = 10  # Offset for annotations
+    padding_percentage = 0.2  # Padding percentage for JSON data
 
-    # Expand the columns
-    expand_columns(column_image, expanded_output_path, expansion_amount)
+    # Step 1: Expand the columns
+    expand_columns(column_image, expanded_columns_output, expansion_amount_columns)
 
-    footing_output = 'output/vae/footing_layer_no_outline.png'  # Output footing layer
-    expansion_amount = 50  # Example expansion amount in pixels
+    # Step 2: Create the footing layer by expanding the columns
+    create_footing_layer(column_image, footing_output, expansion_amount_footing)
 
-    # Create the footing layer by expanding the columns
-    create_footing_layer(column_image, footing_output, expansion_amount)
+    # Step 3: Load and modify JSON data with padding
+    with open(json_file_path, 'r') as f:
+        json_data = json.load(f)
+    padded_json_data = add_padding_to_json(json_data, padding_percentage)
+    with open(padded_json_output, 'w') as f:
+        json.dump(padded_json_data, f, indent=4)
+    print(f"Updated JSON saved at {padded_json_output}")
 
-    wall_image_path = 'output/vae/generated_walls.png'  # Input wall image
-    output_path = 'output/vae/padded_walls_no_outline.png'  # Output padded wall layer
-    padding_amount = 10  # Example padding amount in pixels
+    # Step 4: Add padding to the walls
+    add_padding_to_walls(wall_image_path, padded_walls_output, padding_amount_walls)
 
-    # Add padding to the wall lines
-    add_padding_to_walls(wall_image_path, output_path, padding_amount)
+    # Step 5: Create wall annotation layer
+    create_wall_annotation_layer(padded_json_output, wall_annotation_output, conversion_factor=1)
 
-    json_file = 'output/RL/RLFoundation.json'  # Input JSON file
-    output_path = 'output/vae/wall_annotation_layer.png'  # Output annotation layer
-    conversion_factor = 1  # Conversion factor for units (e.g., 6.923 cm/px)
+    # Step 6: Create footing annotation layer
+    create_manual_footing_annotation_layer(footing_output, footing_annotation_output, conversion_factor, offset)
 
-    # Create the wall annotation layer from the JSON data
-    create_wall_annotation_layer(json_file, output_path, conversion_factor)
+    # Step 7: Create expanded column annotation layer
+    create_expanded_column_annotation_layer(expanded_columns_output, column_annotation_output, conversion_factor, offset)
 
-    # Input expanded column (footing) image
-    expanded_column_image = 'output/vae/footing_layer_no_outline.png'
-    output_path = 'output/vae/manual_footing_annotation_layer.png'  # Output annotation layer
-    conversion_factor = 6.923  # Example conversion factor (cm/px)
-    offset = 10  # Offset to place the annotation slightly above the footing
+    # Step 8: Create dashed grid cross marker layer
+    canvas_width = padded_json_data['features']['canvas_width']
+    canvas_height = padded_json_data['features']['canvas_height']
+    create_dashed_grid_cross_layer(padded_json_output, grid_cross_output, canvas_width, canvas_height, eps=40)
 
-    # Create the footing annotation layer by manually calculating the dimensions
-    create_manual_footing_annotation_layer(
-        expanded_column_image, output_path, conversion_factor, offset)
+    # Step 9: Combine layers and add dashed outline
+    combine_layers_and_add_dashed_outline(footing_output, padded_walls_output, combined_layer_output)
 
-    column_image = 'output/vae/generated_columns.png'  # Input column image
-    annotation_output_path = 'output/vae/manual_column_annotation_layer.png'  # Output annotation layer
-    conversion_factor = 6.923  # Example conversion factor (cm/px)
-    offset = 10  # Offset to place the annotation slightly above the column
-
-    # Create the annotation layer for the expanded columns
-    create_expanded_column_annotation_layer(
-        expanded_output_path, annotation_output_path, conversion_factor, offset)
-    
-    
-    output_path = 'output/vae/black_dashed_grid_cross_marker_layer.png'
-
-    # Path to the input JSON file
-    json_file = 'output/RL/RLFoundation.json'  # Replace with your actual file path
-
-    # Open and read the JSON file
-    try:
-        with open(json_file, 'r') as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        print(f"Error: The file '{json_file}' was not found.")
-        exit(1)
-    except json.JSONDecodeError:
-        print(f"Error: Failed to decode JSON from '{json_file}'.")
-        exit(1)
-
-    # Extract the canvas width and height from the JSON data
-    canvas_width = data.get('features', {}).get('canvas_width', None)
-    canvas_height = data.get('features', {}).get('canvas_height', None)
-
-    # Create the grid-like cross marker layer with black dashed lines from the JSON data
-    create_dashed_grid_cross_layer(
-        json_file, output_path, canvas_width, canvas_height)
-
-    footing_path = 'output/vae/footing_layer_no_outline.png'  # Input footing layer
-    padded_walls_path = 'output/vae/padded_walls_no_outline.png'  # Input padded walls layer
-    output_path = 'output/vae/combined_layer_with_dashed_outline.png'  # Output combined layer
-
-    # Combine layers and add a dashed outline
-    combine_layers_and_add_dashed_outline(
-        footing_path, padded_walls_path, output_path)
-
+    # Step 10: Combine all layers into the final image
     layers = [
-        'output/vae/wall_annotation_layer.png',  # Topmost layer
-        'output/vae/manual_footing_annotation_layer.png',
-        'output/vae/manual_column_annotation_layer.png',
-        'output/vae/black_dashed_grid_cross_marker_layer.png',
-        'output/vae/expanded_columns.png',
-        'output/vae/combined_layer_with_dashed_outline.png'  # Bottommost layer
+        wall_annotation_output,
+        footing_annotation_output,
+        column_annotation_output,
+        # grid_cross_output,
+        expanded_columns_output,
+        combined_layer_output  # Bottommost layer
     ]
+    canvas_size = (canvas_width, canvas_height)
+    combine_all_layers(layers, final_combined_output, canvas_size)
 
-    output_path = 'static/images/final_combined_image.png'  # Output final image
-    canvas_size = (canvas_width, canvas_height)  # Example canvas size from JSON features
-
-    # Combine all layers from top to bottom with a white background
-    combine_all_layers(layers, output_path, canvas_size)
 
 
 # Main script for generating layout

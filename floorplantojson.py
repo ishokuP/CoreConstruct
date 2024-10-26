@@ -6,7 +6,7 @@ from roboflow import Roboflow
 from dotenv import load_dotenv
 
 # TODO: make the flow clearer -> roboflow -> correctFormat
-def process_image(image_path, output_image_path, json_output_path, mask_output_path, confidence=0.01, overlap=0.5):
+def process_image(image_path, output_image_path, json_output_path, mask_output_path, confidence=0.01, overlap=0.25):
     """
     Authenticate Roboflow, load image, run inference, visualize results, 
     save the annotated image, generate a black-and-white mask, and save JSON.

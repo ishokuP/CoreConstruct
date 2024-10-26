@@ -4,9 +4,10 @@ import json
 import numpy as np
 from werkzeug.utils import secure_filename
 
+
 # Importing coreconstruct features
 
-from floorplantoJSON import process_image
+from floorplantojson import process_image
 from jsonFormatter import transform_predictions
 from addfeature import transfer_canvas_dimensions
 from JSONReinforcement import mainReinforcement
@@ -199,12 +200,12 @@ def analyze_generate():
 
     # Call the ANN model with the prepared input
 
-    scale_1, scale_2 = test_model(single_input)
-    footingexpandinflation = int(85*scale_2)
+    column_scale, footing_scale = test_model(single_input)
+    
 
     foundationplanjson = os.path.join(
         app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
-    generateFoundationPlan(foundationplanjson)
+    generateFoundationPlan(foundationplanjson, column_scale, footing_scale)
 
     # TODO: post.py and file association
 
