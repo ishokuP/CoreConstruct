@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import cv2
 import numpy as np
-from post import add_padding_to_json, create_footing_info_layer, expand_columns, create_dashed_grid_cross_layer, create_footing_layer, add_padding_to_walls, create_manual_footing_annotation_layer, create_wall_annotation_layer, create_expanded_column_annotation_layer, combine_all_layers, combine_layers_and_add_dashed_outline
+from post import add_padding_to_json, create_footing_info_layer, expand_columns, create_dashed_grid_cross_layer, create_footing_layer, add_padding_to_walls, create_manual_footing_annotation_layer, create_wall_annotation_layer, create_expanded_column_annotation_layer, combine_all_layers, combine_layers_and_add_dashed_outline, save_image_with_alpha
 # TODO: post
 # Conditional VAE Model (same as before)
 
@@ -250,6 +250,9 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
 
     # Step 6: Create footing annotation layer and get footing size
     footing_annotation_layer, footing_size_cm = create_manual_footing_annotation_layer(footing_output, conversion_factor, offset)
+    
+    footing_annotation_output_path = 'output/vae/manual_footing_annotation_layer.png'
+    save_image_with_alpha(footing_annotation_layer, footing_annotation_output_path)
 
     # Step 7: Create expanded column annotation layer
     create_expanded_column_annotation_layer(expanded_columns_output, column_annotation_output, conversion_factor, offset)
@@ -269,6 +272,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     # Step 11: Combine all layers into the final image
     layers = [
         wall_annotation_output,
+        footing_annotation_output_path,
         footing_annotation_output,
         column_annotation_output,
         footing_info_output,          # New layer with footing info

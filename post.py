@@ -703,11 +703,24 @@ def overlay_images_at_center(base_image, overlay_image):
 
     return base_image
 
-   
+def save_image_with_alpha(img, output_path):
+    """
+    Save an image that includes an alpha channel.
+
+    Parameters:
+    - img: Image to save (numpy array with 4 channels).
+    - output_path: Path to save the image.
+
+    Returns:
+    - None
+    """
+    cv2.imwrite(output_path, img)
+    print(f"Image saved at {output_path}")
+
 
 # Main script to process the images
 if __name__ == "__main__":
-    # Input and output file paths
+  # Input and output file paths
     column_image = 'output/vae/generated_columns.png'
     expanded_columns_output = 'output/vae/expanded_columns.png'
     footing_output = 'output/vae/footing_layer_no_outline.png'
@@ -751,8 +764,8 @@ if __name__ == "__main__":
     # Step 5: Create wall annotation layer
     create_wall_annotation_layer(padded_json_output, wall_annotation_output, conversion_factor=1)
 
-    # Step 6: Create footing annotation layer
-    create_manual_footing_annotation_layer(footing_output, footing_annotation_output, conversion_factor, offset)
+    # Step 6: Create footing annotation layer and get footing size
+    footing_annotation_layer, footing_size_cm = create_manual_footing_annotation_layer(footing_output, conversion_factor, offset)
 
     # Step 7: Create expanded column annotation layer
     create_expanded_column_annotation_layer(expanded_columns_output, column_annotation_output, conversion_factor, offset)
@@ -768,15 +781,14 @@ if __name__ == "__main__":
     # Step 10: Create footing information layer
     reinforcement_diameter = barsize_value  # User input (in mm)
     number_of_storeys = num_storey_value  # User input (1 or 2)
-    create_footing_info_layer(footing_output, footing_info_output, reinforcement_diameter, number_of_storeys, conversion_factor, offset)
-
+    create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys, conversion_factor, offset)
     # Step 11: Combine all layers into the final image
     layers = [
         wall_annotation_output,
         footing_annotation_output,
         column_annotation_output,
-        grid_cross_output,
         footing_info_output,          # New layer with footing info
+        grid_cross_output,
         expanded_columns_output,
         combined_layer_output  # Bottommost layer
     ]
