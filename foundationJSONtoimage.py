@@ -224,7 +224,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     expansion_amount_columns = int(10 * column_scale)
     expansion_amount_footing = int(90  * footing_scale)
     padding_amount_walls = 40
-    conversion_factor = 6.923  # Example conversion factor (cm/px)
+    conversion_factor = 7.44  # Example conversion factor (cm/px)
     offset = 10  # Offset for annotations
     padding_percentage = 0.2  # Padding percentage for JSON data
 
