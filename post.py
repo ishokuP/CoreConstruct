@@ -716,7 +716,7 @@ if __name__ == "__main__":
     json_file_path = 'output/RL/RLFoundation.json'
     padded_json_output = 'output/RL/RLFoundationPadded.json'
     wall_annotation_output = 'output/vae/wall_annotation_layer.png'
-    footing_annotation_output = 'output/vae/manual_footing_annotation_layer.png'
+    footing_annotation_output = 'output/vae/footing_info_layer.png'
     column_annotation_output = 'output/vae/manual_column_annotation_layer.png'
     grid_cross_output = 'output/vae/black_dashed_grid_cross_marker_layer.png'
     combined_layer_output = 'output/vae/combined_layer_with_dashed_outline.png'
