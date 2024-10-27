@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import cv2
 import numpy as np
-from post import add_padding_to_json, expand_columns, create_dashed_grid_cross_layer, create_footing_layer, add_padding_to_walls, create_manual_footing_annotation_layer, create_wall_annotation_layer, create_expanded_column_annotation_layer, combine_all_layers, combine_layers_and_add_dashed_outline
+from post import add_padding_to_json, create_footing_info_layer, expand_columns, create_dashed_grid_cross_layer, create_footing_layer, add_padding_to_walls, create_manual_footing_annotation_layer, create_wall_annotation_layer, create_expanded_column_annotation_layer, combine_all_layers, combine_layers_and_add_dashed_outline
 # TODO: post
 # Conditional VAE Model (same as before)
 
@@ -172,7 +172,7 @@ def generate_layout(model, json_file):
 # Load the trained VAE model and generate layout based on JSON
 
 
-def generateFoundationPlan(json_file,column_scale, footing_scale, model_path='models/vae/vae_final.pth'):
+def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_value,barsize_value,model_path='models/vae/vae_final.pth'):
     # Initialize VAE and load trained weights
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -199,6 +199,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale, model_path='mo
     column_annotation_output = 'output/vae/manual_column_annotation_layer.png'
     grid_cross_output = 'output/vae/black_dashed_grid_cross_marker_layer.png'
     combined_layer_output = 'output/vae/combined_layer_with_dashed_outline.png'
+    footing_info_output = 'output/vae/footing_info_layer.png'  # New output file
     final_combined_output = 'static/images/final_combined_image.png'
 
     # Parameters
@@ -238,22 +239,30 @@ def generateFoundationPlan(json_file,column_scale, footing_scale, model_path='mo
     # Step 8: Create dashed grid cross marker layer
     canvas_width = padded_json_data['features']['canvas_width']
     canvas_height = padded_json_data['features']['canvas_height']
-    create_dashed_grid_cross_layer(padded_json_output, grid_cross_output, canvas_width, canvas_height, eps=40)
+    create_dashed_grid_cross_layer(padded_json_output, grid_cross_output, canvas_width, canvas_height)
 
     # Step 9: Combine layers and add dashed outline
     combine_layers_and_add_dashed_outline(footing_output, padded_walls_output, combined_layer_output)
 
-    # Step 10: Combine all layers into the final image
+    # Step 10: Create footing information layer
+    reinforcement_diameter = barsize_value  # User input (in mm)
+    number_of_storeys = num_storey_value  # User input (1 or 2)
+    create_footing_info_layer(footing_output, footing_info_output, reinforcement_diameter, number_of_storeys, conversion_factor, offset)
+
+    # Step 11: Combine all layers into the final image
     layers = [
         wall_annotation_output,
         footing_annotation_output,
         column_annotation_output,
         grid_cross_output,
+        footing_info_output,          # New layer with footing info
         expanded_columns_output,
         combined_layer_output  # Bottommost layer
     ]
     canvas_size = (canvas_width, canvas_height)
     combine_all_layers(layers, final_combined_output, canvas_size)
+
+
 
 
 

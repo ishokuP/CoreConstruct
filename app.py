@@ -5,6 +5,7 @@ import numpy as np
 from werkzeug.utils import secure_filename
 
 
+
 # Importing coreconstruct features
 
 from floorplantojson import process_image
@@ -39,6 +40,14 @@ material_spec_map = {
     "rc": 3
 }
 
+Barsize_map = {
+    "10mm": 10,
+    "12mm": 12,
+    "16mm": 16,
+    "20mm": 20,
+}
+
+
 app = Flask(__name__)
 app.secret_key = 'wowCoreandConstruct'
 
@@ -72,6 +81,7 @@ def analyze_generate():
     building_type = request.form.get('buildingType')
     num_storey = request.form.get('numStorey')
     material_spec = request.form.get('materialSpecs')
+    barSize = request.form.get('barSize')
 
     # Print the values received for debugging
     print(f"Uploaded File: {uploaded_file.filename if uploaded_file else 'No file uploaded'}")
@@ -79,6 +89,7 @@ def analyze_generate():
     print(f"Building Type: {building_type}")
     print(f"Number of Storeys: {num_storey}")
     print(f"Material Spec: {material_spec}")
+    print(f"Bar Size: {barSize}")
 
     # Perform backend validation
     missing_fields = []
@@ -189,11 +200,14 @@ def analyze_generate():
     building_type_value = building_type_map.get(building_type)
     num_storey_value = num_storey_map.get(num_storey)
     material_spec_value = material_spec_map.get(material_spec)
-
+    barsize_value = Barsize_map.get(barSize)
+    
+    
     soil_type_value = int(soil_type_value)
     building_type_value = int(building_type_value)
     num_storey_value = int(num_storey_value)
     material_spec_value = int(material_spec_value)
+    barsize_value = int(barsize_value)
 
     single_input = [soil_type_value, material_spec_value, num_storey_value]
 
@@ -204,7 +218,7 @@ def analyze_generate():
 
     foundationplanjson = os.path.join(
         app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
-    generateFoundationPlan(foundationplanjson, column_scale, footing_scale)
+    generateFoundationPlan(foundationplanjson, column_scale, footing_scale,num_storey_value,barsize_value)
 
     # TODO: post.py and file association
 

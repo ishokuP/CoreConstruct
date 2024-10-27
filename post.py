@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import json
+import math
 
 def load_image_with_alpha(image_path):
     """
@@ -266,7 +267,7 @@ def draw_dashed_line(img, start_point, end_point, color=(0, 0, 0, 255), thicknes
         # Draw the dash
         cv2.line(img, start, end, color, thickness)
 
-def create_dashed_grid_cross_layer(json_file, output_path, canvas_width, canvas_height, eps=20):
+def create_dashed_grid_cross_layer(json_file, output_path, canvas_width, canvas_height, eps=50):
     """
     Create a grid-like cross marker layer with black dashed lines based on the column center points from the JSON file.
 
@@ -288,56 +289,65 @@ def create_dashed_grid_cross_layer(json_file, output_path, canvas_width, canvas_
     grid_cross_layer = np.zeros((canvas_height, canvas_width, 4), dtype=np.uint8)
 
     # Collect all center points
-    centers_x = []
-    centers_y = []
+    centers = []
     for column in data['columns']:
         start_x, start_y = column['start_point']
         end_x, end_y = column['end_point']
         center_x = int((start_x + end_x) / 2)
         center_y = int((start_y + end_y) / 2)
-        centers_x.append([center_x])
-        centers_y.append([center_y])
+        centers.append((center_x, center_y))
 
-    # Convert centers to numpy arrays
-    centers_x_np = np.array(centers_x)
-    centers_y_np = np.array(centers_y)
+    centers_np = np.array(centers)
 
-    # Perform clustering on x-coordinates to group close vertical lines
-    clustering_x = DBSCAN(eps=eps, min_samples=1).fit(centers_x_np)
+    # Debug: Print column centers
+    print("Column Centers:")
+    for idx, (cx, cy) in enumerate(centers):
+        print(f"Column {idx}: ({cx}, {cy})")
+
+    # Cluster on x-coordinates
+    x_coords = centers_np[:, 0].reshape(-1, 1)
+    clustering_x = DBSCAN(eps=eps, min_samples=1).fit(x_coords)
     labels_x = clustering_x.labels_
 
-    # Perform clustering on y-coordinates to group close horizontal lines
-    clustering_y = DBSCAN(eps=eps, min_samples=1).fit(centers_y_np)
+    # Cluster on y-coordinates
+    y_coords = centers_np[:, 1].reshape(-1, 1)
+    clustering_y = DBSCAN(eps=eps, min_samples=1).fit(y_coords)
     labels_y = clustering_y.labels_
 
+    # Debug: Print cluster labels
+    print("X-coordinate cluster labels:", labels_x)
+    print("Y-coordinate cluster labels:", labels_y)
+
     # For each cluster in x, calculate the average x position
-    unique_labels_x = set(labels_x)
+    unique_labels_x = np.unique(labels_x)
     averaged_centers_x = []
     for label in unique_labels_x:
-        cluster_points = centers_x_np[labels_x == label]
-        avg_x = cluster_points.mean(axis=0).astype(int)[0]
+        cluster_points = x_coords[labels_x == label]
+        avg_x = int(np.mean(cluster_points))
         averaged_centers_x.append(avg_x)
+        print(f"Cluster X {label}: Avg X = {avg_x}")
 
     # For each cluster in y, calculate the average y position
-    unique_labels_y = set(labels_y)
+    unique_labels_y = np.unique(labels_y)
     averaged_centers_y = []
     for label in unique_labels_y:
-        cluster_points = centers_y_np[labels_y == label]
-        avg_y = cluster_points.mean(axis=0).astype(int)[0]
+        cluster_points = y_coords[labels_y == label]
+        avg_y = int(np.mean(cluster_points))
         averaged_centers_y.append(avg_y)
+        print(f"Cluster Y {label}: Avg Y = {avg_y}")
 
     # Draw vertical dashed lines at averaged x positions
-    for center_x in averaged_centers_x:
-        draw_dashed_line(grid_cross_layer, (center_x, 0), (center_x, canvas_height), (0, 0, 0, 255))
+    for avg_x in averaged_centers_x:
+        draw_dashed_line(grid_cross_layer, (avg_x, 0), (avg_x, canvas_height), color=(0, 0, 0, 255))
 
     # Draw horizontal dashed lines at averaged y positions
-    for center_y in averaged_centers_y:
-        draw_dashed_line(grid_cross_layer, (0, center_y), (canvas_width, center_y), (0, 0, 0, 255))
+    for avg_y in averaged_centers_y:
+        draw_dashed_line(grid_cross_layer, (0, avg_y), (canvas_width, avg_y), color=(0, 0, 0, 255))
 
     # Save the grid cross marker layer with dashed lines as a PNG with transparency
     save_image_with_alpha(grid_cross_layer, output_path)
     print(f"Dashed grid cross marker layer saved at {output_path}")
-    
+  
 def draw_dashed_outline(img, contours, color=(0, 0, 0, 255), thickness=1, dash_length=20, gap_length=5):
     """
     Draw a dashed outline around the specified contours.
@@ -416,6 +426,7 @@ def overlay_images(base_image, overlay_image):
     # Update the alpha channel
     base_image[:, :, 3] = np.maximum(base_image[:, :, 3], overlay_image[:, :, 3])
 
+
 def combine_all_layers(layers, output_path, canvas_size):
     """
     Combine all specified layers from bottom to top with a white background.
@@ -487,26 +498,163 @@ def add_padding_to_json(json_data, padding_percentage=0.20):
 
     return json_data
 
+
+def compute_reinforcement_bars():
+    """
+    Placeholder function to compute the number of reinforcement bars.
+    Returns a fixed number for now.
+    """
+    return 6  # Replace with actual computation logic when available
+
+def calculate_square_reinforcement(footing_size, footing_thickness, bar_diameter, concrete_cover):
+    # Calculate gross area of footing (Ag)
+    Ag = footing_size * footing_thickness
+
+    # Calculate minimum area of steel reinforcement (As)
+    As = 0.002 * Ag
+
+    # Calculate the number of steel bars (rounding up)
+    bar_area = (math.pi / 4) * (bar_diameter ** 2)
+    no_of_bars = math.ceil(As / bar_area)
+
+    # Calculate spacing for bars
+    spacing = (footing_size - 2 * concrete_cover) / no_of_bars
+
+    return {"no_of_bars": no_of_bars, "spacing": spacing}
+
+import random
+
+def create_footing_info_layer(image_path, output_path, reinforcement_diameter, number_of_storeys, conversion_factor=1, offset=10):
+    # Load the image
+    img = load_image_with_alpha(image_path)
+    binary_mask = create_binary_mask_from_alpha(img)
+    contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Create a fully transparent annotation layer
+    annotation_layer = np.zeros_like(img, dtype=np.uint8)
+
+    if contours:
+        # Find the footing closest to the bottom-left corner
+        image_height, image_width = binary_mask.shape
+        bottom_left_point = (0, image_height)
+        min_distance = None
+        closest_footing_contour = None
+
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            footing_center_x = x + w // 2
+            footing_center_y = y + h // 2
+
+            # Calculate distance from footing center to bottom-left corner
+            distance = ((footing_center_x - bottom_left_point[0]) ** 2 + (footing_center_y - bottom_left_point[1]) ** 2) ** 0.5
+
+            if min_distance is None or distance < min_distance:
+                min_distance = distance
+                closest_footing_contour = contour
+                closest_footing_bbox = (x, y, w, h)
+
+        # Use the closest footing
+        x, y, w, h = closest_footing_bbox
+
+        # Placeholder for number of reinforcement bars
+        number_of_bars = compute_reinforcement_bars()
+        
+        # TODO: Fix
+        # footing_size, footing_thickness, bar_diameter, concrete_cover needs things
+        # number_of_bars = calculate_square_reinforcement(footing_size, footing_thickness, bar_diameter, concrete_cover)
+
+        # Determine depth of footing based on number of storeys
+        depth_of_footing = 1125 if number_of_storeys == 1 else 1425
+        
+        
+        # Prepare text lines
+        text_lines = [
+            "Concrete Cover: 75 mm",
+            "Footing Thickness: 225 mm",
+            f"Reinforcement: {number_of_bars} pcs - {reinforcement_diameter} mm diameter",
+            f"Depth of Footing: {depth_of_footing} mm ({number_of_storeys} storey{'s' if number_of_storeys > 1 else ''})"
+        ]
+
+        # Set text properties
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.6
+        font_thickness = 1
+        text_color_bgr = (0, 0, 0)  # Black text
+        box_color_bgr = (255, 255, 255, 255)  # White background with full alpha
+        box_border_color = (0, 0, 0, 255)  # Black border with full alpha
+
+        # Calculate size of text block
+        text_sizes = [cv2.getTextSize(line, font, font_scale, font_thickness)[0] for line in text_lines]
+        max_text_width = max([size[0] for size in text_sizes])
+        total_text_height = sum([size[1] + offset for size in text_sizes]) - offset
+
+        # Position of text box at bottom-left corner
+        box_x = offset
+        box_y = annotation_layer.shape[0] - total_text_height - 2 * offset
+
+        # Draw the text box (filled rectangle with border)
+        box_width = max_text_width + 2 * offset
+        box_height = total_text_height + 2 * offset
+        cv2.rectangle(annotation_layer, (box_x, box_y), (box_x + box_width, box_y + box_height), box_color_bgr, cv2.FILLED)
+        cv2.rectangle(annotation_layer, (box_x, box_y), (box_x + box_width, box_y + box_height), box_border_color, 1)
+
+        # Write text lines inside the box
+        current_y = box_y + offset
+        for line, size in zip(text_lines, text_sizes):
+            text_x = box_x + offset
+            text_y = current_y + size[1]
+            cv2.putText(annotation_layer, line, (text_x, text_y), font, font_scale, text_color_bgr, font_thickness, cv2.LINE_AA)
+            current_y += size[1] + offset
+
+        # Choose a random point within the expanded footing bounding box
+        random_x = random.randint(x, x + w)
+        random_y = random.randint(y, y + h)
+        random_point_inside_footing = (random_x, random_y)
+
+        # Draw arrow from the top of the box to the random point inside the footing
+        arrow_start_point = (box_x + box_width // 2, box_y)
+        arrow_end_point = random_point_inside_footing
+
+        arrow_color = (1, 1, 1, 255)  # Black color for the arrow
+        arrow_thickness = 2  # Reduced thickness
+        arrow_tip_length = 0.05  # Smaller tip length
+
+        cv2.arrowedLine(annotation_layer, arrow_start_point, arrow_end_point, arrow_color, thickness=arrow_thickness, tipLength=arrow_tip_length)
+
+    else:
+        print("No footings found in the image.")
+
+    # Ensure alpha channel is set correctly
+    b_channel, g_channel, r_channel = cv2.split(annotation_layer[:, :, :3])
+    alpha_mask = ((b_channel != 0) | (g_channel != 0) | (r_channel != 0)).astype(np.uint8) * 255
+    annotation_layer[:, :, 3] = alpha_mask
+
+    # Save the annotation layer
+    save_image_with_alpha(annotation_layer, output_path)
+    print(f"Footing info layer saved at {output_path}")
+
+
 # Main script to process the images
 if __name__ == "__main__":
     # Input and output file paths
-    column_image = 'generated_columns.png'
-    expanded_columns_output = 'expanded_columns.png'
-    footing_output = 'footing_layer_no_outline.png'
-    wall_image_path = 'generated_walls.png'
-    padded_walls_output = 'padded_walls_no_outline.png'
+    column_image = 'output/vae/generated_columns.png'
+    expanded_columns_output = 'output/vae/expanded_columns.png'
+    footing_output = 'output/vae/footing_layer_no_outline.png'
+    wall_image_path = 'output/vae/generated_walls.png'
+    padded_walls_output = 'output/vae/padded_walls_no_outline.png'
     json_file_path = 'output/RL/RLFoundation.json'
     padded_json_output = 'output/RL/RLFoundationPadded.json'
-    wall_annotation_output = 'wall_annotation_layer.png'
-    footing_annotation_output = 'manual_footing_annotation_layer.png'
-    column_annotation_output = 'manual_column_annotation_layer.png'
-    grid_cross_output = 'black_dashed_grid_cross_marker_layer.png'
-    combined_layer_output = 'combined_layer_with_dashed_outline.png'
-    final_combined_output = 'final_combined_image.png'
+    wall_annotation_output = 'output/vae/wall_annotation_layer.png'
+    footing_annotation_output = 'output/vae/manual_footing_annotation_layer.png'
+    column_annotation_output = 'output/vae/manual_column_annotation_layer.png'
+    grid_cross_output = 'output/vae/black_dashed_grid_cross_marker_layer.png'
+    combined_layer_output = 'output/vae/combined_layer_with_dashed_outline.png'
+    footing_info_output = 'output/vae/footing_info_layer.png'  # New output file
+    final_combined_output = 'static/images/final_combined_image.png'
 
     # Parameters
-    expansion_amount_columns = 10
-    expansion_amount_footing = 90
+    expansion_amount_columns = int(10 * column_scale) # type: ignore
+    expansion_amount_footing = int(90  * footing_scale) # type: ignore
     padding_amount_walls = 40
     conversion_factor = 6.923  # Example conversion factor (cm/px)
     offset = 10  # Offset for annotations
@@ -532,13 +680,13 @@ if __name__ == "__main__":
     # Step 5: Create wall annotation layer
     create_wall_annotation_layer(padded_json_output, wall_annotation_output, conversion_factor=1)
 
-    # Step 6: Create footing annotation layer (annotate only one footing)
+    # Step 6: Create footing annotation layer
     create_manual_footing_annotation_layer(footing_output, footing_annotation_output, conversion_factor, offset)
 
-    # Step 7: Create expanded column annotation layer (annotate only one column)
+    # Step 7: Create expanded column annotation layer
     create_expanded_column_annotation_layer(expanded_columns_output, column_annotation_output, conversion_factor, offset)
 
-    # Step 8: Create dashed grid cross marker layer (for only one column)
+    # Step 8: Create dashed grid cross marker layer
     canvas_width = padded_json_data['features']['canvas_width']
     canvas_height = padded_json_data['features']['canvas_height']
     create_dashed_grid_cross_layer(padded_json_output, grid_cross_output, canvas_width, canvas_height)
@@ -546,12 +694,18 @@ if __name__ == "__main__":
     # Step 9: Combine layers and add dashed outline
     combine_layers_and_add_dashed_outline(footing_output, padded_walls_output, combined_layer_output)
 
-    # Step 10: Combine all layers into the final image
+    # Step 10: Create footing information layer
+    reinforcement_diameter = barsize_value  # type: ignore # User input (in mm)
+    number_of_storeys = num_storey_value  # type: ignore # User input (1 or 2)
+    create_footing_info_layer(footing_output, footing_info_output, reinforcement_diameter, number_of_storeys, conversion_factor, offset)
+
+    # Step 11: Combine all layers into the final image
     layers = [
         wall_annotation_output,
         footing_annotation_output,
         column_annotation_output,
         grid_cross_output,
+        footing_info_output,          # New layer with footing info
         expanded_columns_output,
         combined_layer_output  # Bottommost layer
     ]
