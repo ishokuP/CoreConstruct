@@ -156,7 +156,7 @@ def create_wall_annotation_layer(json_file, output_path, conversion_factor=1, te
     # Save the annotation layer as a PNG with transparency
     save_image_with_alpha(annotation_layer, output_path)
 
-def create_annotation_layer_from_image(image_path, output_path, conversion_factor=1, offset=10, text_color=(0,255,0,255)):
+def create_annotation_layer_from_image(image_path, output_path, conversion_factor=1, offset=10, text_color=(0,255,0,255), annotate_only_one=False):
     """
     Create an annotation layer by calculating dimensions from an image.
 
@@ -166,6 +166,7 @@ def create_annotation_layer_from_image(image_path, output_path, conversion_facto
     - conversion_factor: Conversion factor from pixels to display units.
     - offset: Vertical offset for the text annotations.
     - text_color: Color of the text annotations.
+    - annotate_only_one: If True, only annotate one contour.
     """
     img = load_image_with_alpha(image_path)
     binary_mask = create_binary_mask_from_alpha(img)
@@ -173,6 +174,10 @@ def create_annotation_layer_from_image(image_path, output_path, conversion_facto
 
     # Create an empty transparent image for the annotation layer
     annotation_layer = np.zeros_like(img)
+
+    # If annotate_only_one is True, select one contour (e.g., the largest)
+    if annotate_only_one and contours:
+        contours = [max(contours, key=cv2.contourArea)]
 
     # Iterate through each contour and calculate its dimensions
     for contour in contours:
@@ -190,33 +195,38 @@ def create_annotation_layer_from_image(image_path, output_path, conversion_facto
         cv2.putText(annotation_layer, f"{dimension} cm", (text_x, text_y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 1, cv2.LINE_AA)
 
+        # If only annotating one contour, break after the first
+        if annotate_only_one:
+            break
+
     # Save the annotation layer
     save_image_with_alpha(annotation_layer, output_path)
-
+    
 def create_manual_footing_annotation_layer(expanded_column_image, output_path, conversion_factor=1, offset=10):
     """
     Create an annotation layer for footings by manually calculating their dimensions from the expanded column image.
-
-    Parameters:
-    - expanded_column_image: Path to the expanded column (footing) image.
-    - output_path: Path to save the annotation layer.
-    - conversion_factor: Conversion factor from pixels to display units.
-    - offset: Vertical offset for the text annotations.
     """
-    create_annotation_layer_from_image(expanded_column_image, output_path, conversion_factor, offset, text_color=(0,255,0,255))
+    create_annotation_layer_from_image(
+        expanded_column_image,
+        output_path,
+        conversion_factor,
+        offset,
+        text_color=(0, 0, 255, 255),  # Blue color for footings
+        annotate_only_one=True  # Only annotate one footing
+    )
 
 def create_expanded_column_annotation_layer(expanded_column_image, output_path, conversion_factor=1, offset=10):
     """
     Create an annotation layer for the expanded columns by calculating their dimensions.
-
-    Parameters:
-    - expanded_column_image: Path to the expanded column image.
-    - output_path: Path to save the annotation layer.
-    - conversion_factor: Conversion factor from pixels to display units.
-    - offset: Vertical offset for the text annotations.
     """
-    create_annotation_layer_from_image(expanded_column_image, output_path, conversion_factor, offset, text_color=(0,255,0,255))
-
+    create_annotation_layer_from_image(
+        expanded_column_image,
+        output_path,
+        conversion_factor,
+        offset,
+        text_color=(0,255,0,255),
+        annotate_only_one=True  # Only annotate one column
+    )
 def draw_dashed_line(img, start_point, end_point, color=(0, 0, 0, 255), thickness=1, dash_length=20, gap_length=5):
     """
     Draw a dashed line on an image from start_point to end_point.
@@ -327,7 +337,7 @@ def create_dashed_grid_cross_layer(json_file, output_path, canvas_width, canvas_
     # Save the grid cross marker layer with dashed lines as a PNG with transparency
     save_image_with_alpha(grid_cross_layer, output_path)
     print(f"Dashed grid cross marker layer saved at {output_path}")
-
+    
 def draw_dashed_outline(img, contours, color=(0, 0, 0, 255), thickness=1, dash_length=20, gap_length=5):
     """
     Draw a dashed outline around the specified contours.
@@ -522,16 +532,16 @@ if __name__ == "__main__":
     # Step 5: Create wall annotation layer
     create_wall_annotation_layer(padded_json_output, wall_annotation_output, conversion_factor=1)
 
-    # Step 6: Create footing annotation layer
+    # Step 6: Create footing annotation layer (annotate only one footing)
     create_manual_footing_annotation_layer(footing_output, footing_annotation_output, conversion_factor, offset)
 
-    # Step 7: Create expanded column annotation layer
+    # Step 7: Create expanded column annotation layer (annotate only one column)
     create_expanded_column_annotation_layer(expanded_columns_output, column_annotation_output, conversion_factor, offset)
 
-    # Step 8: Create dashed grid cross marker layer
+    # Step 8: Create dashed grid cross marker layer (for only one column)
     canvas_width = padded_json_data['features']['canvas_width']
     canvas_height = padded_json_data['features']['canvas_height']
-    create_dashed_grid_cross_layer(padded_json_output, grid_cross_output, canvas_width, canvas_height, conversion_factor)
+    create_dashed_grid_cross_layer(padded_json_output, grid_cross_output, canvas_width, canvas_height)
 
     # Step 9: Combine layers and add dashed outline
     combine_layers_and_add_dashed_outline(footing_output, padded_walls_output, combined_layer_output)
@@ -541,7 +551,7 @@ if __name__ == "__main__":
         wall_annotation_output,
         footing_annotation_output,
         column_annotation_output,
-        # grid_cross_output,
+        grid_cross_output,
         expanded_columns_output,
         combined_layer_output  # Bottommost layer
     ]

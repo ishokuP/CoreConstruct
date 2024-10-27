@@ -74,8 +74,7 @@ def analyze_generate():
     material_spec = request.form.get('materialSpecs')
 
     # Print the values received for debugging
-    print(f"Uploaded File: {
-          uploaded_file.filename if uploaded_file else 'No file uploaded'}")
+    print(f"Uploaded File: {uploaded_file.filename if uploaded_file else 'No file uploaded'}")
     print(f"Soil Type: {soil_type}")
     print(f"Building Type: {building_type}")
     print(f"Number of Storeys: {num_storey}")

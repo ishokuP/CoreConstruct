@@ -248,7 +248,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale, model_path='mo
         wall_annotation_output,
         footing_annotation_output,
         column_annotation_output,
-        # grid_cross_output,
+        grid_cross_output,
         expanded_columns_output,
         combined_layer_output  # Bottommost layer
     ]
