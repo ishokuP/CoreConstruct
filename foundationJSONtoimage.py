@@ -142,6 +142,7 @@ def add_padding(image, padding_percentage=0.3):
 
 def generate_layout(model, json_file):
     model.eval()  # Set model to evaluation mode
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     with open(json_file, 'r') as f:
         data = json.load(f)
 
@@ -166,7 +167,7 @@ def generate_layout(model, json_file):
         start_point = (column['start_point'][0], column['start_point'][1])
         end_point = (column['end_point'][0], column['end_point'][1])
 
-        z = torch.randn(1, 128).cuda()  # Random latent vector
+        z = torch.randn(1, 128, device=device)  # Adjusted for device compatibility
         with torch.no_grad():
             generated_column = model.decode(
                 z).squeeze().cpu().numpy()  # Generate column
@@ -196,9 +197,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model = ConditionalVAE(img_channels=1, latent_dim=128).to(device)
-    model.load_state_dict(torch.load(
-        model_path, map_location=device, weights_only=True)
-                          )
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
     # Generate layout based on the input JSON file
