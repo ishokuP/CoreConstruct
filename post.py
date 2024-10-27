@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import json
 import math
+import numpy as np
+from sklearn.cluster import DBSCAN
 
 def load_image_with_alpha(image_path):
     """
@@ -203,19 +205,45 @@ def create_annotation_layer_from_image(image_path, output_path, conversion_facto
     # Save the annotation layer
     save_image_with_alpha(annotation_layer, output_path)
     
-def create_manual_footing_annotation_layer(expanded_column_image, output_path, conversion_factor=1, offset=10):
+def create_manual_footing_annotation_layer(expanded_column_image, conversion_factor=1, offset=10):
     """
     Create an annotation layer for footings by manually calculating their dimensions from the expanded column image.
-    """
-    create_annotation_layer_from_image(
-        expanded_column_image,
-        output_path,
-        conversion_factor,
-        offset,
-        text_color=(0, 0, 255, 255),  # Blue color for footings
-        annotate_only_one=True  # Only annotate one footing
-    )
 
+    Parameters:
+    - expanded_column_image: Path to the input expanded column image.
+    - conversion_factor: Conversion factor for units.
+    - offset: Vertical offset for text annotations.
+
+    Returns:
+    - annotation_layer: NumPy array representing the annotation layer.
+    - footing_size_cm: Size of the footing in cm, calculated from the largest contour.
+    """
+    img = load_image_with_alpha(expanded_column_image)
+    binary_mask = create_binary_mask_from_alpha(img)
+    contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Create an empty transparent image for the annotation layer
+    annotation_layer = np.zeros_like(img)
+
+    footing_size_cm = 0  # Initialize footing size variable
+
+    # If there are contours, select the largest (as 'footing')
+    if contours:
+        largest_contour = max(contours, key=cv2.contourArea)
+        x, y, w, h = cv2.boundingRect(largest_contour)
+
+        # Calculate dimension in cm using the conversion factor
+        footing_size_cm = round(w * conversion_factor, 2)
+
+        # Calculate the position for the annotation (slightly above the bounding box)
+        text_x = int(x + w / 2)
+        text_y = max(0, y - offset)
+
+        # Add text annotation to the layer
+        cv2.putText(annotation_layer, f"{footing_size_cm} cm", (text_x, text_y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255, 255), 1, cv2.LINE_AA)
+
+    return annotation_layer, footing_size_cm
 def create_expanded_column_annotation_layer(expanded_column_image, output_path, conversion_factor=1, offset=10):
     """
     Create an annotation layer for the expanded columns by calculating their dimensions.
@@ -270,17 +298,7 @@ def draw_dashed_line(img, start_point, end_point, color=(0, 0, 0, 255), thicknes
 def create_dashed_grid_cross_layer(json_file, output_path, canvas_width, canvas_height, eps=50):
     """
     Create a grid-like cross marker layer with black dashed lines based on the column center points from the JSON file.
-
-    Parameters:
-    - json_file: Path to the JSON file containing column data.
-    - output_path: Path to save the grid cross marker layer.
-    - canvas_width: Width of the canvas.
-    - canvas_height: Height of the canvas.
-    - eps: Maximum distance between points to be considered in the same cluster (in pixels).
     """
-    import numpy as np
-    from sklearn.cluster import DBSCAN
-
     # Load the JSON data
     with open(json_file, 'r') as f:
         data = json.load(f)
@@ -336,11 +354,11 @@ def create_dashed_grid_cross_layer(json_file, output_path, canvas_width, canvas_
         averaged_centers_y.append(avg_y)
         print(f"Cluster Y {label}: Avg Y = {avg_y}")
 
-    # Draw vertical dashed lines at averaged x positions
+    # Draw vertical dashed lines at averaged x positions (extend to match canvas height)
     for avg_x in averaged_centers_x:
         draw_dashed_line(grid_cross_layer, (avg_x, 0), (avg_x, canvas_height), color=(0, 0, 0, 255))
 
-    # Draw horizontal dashed lines at averaged y positions
+    # Draw horizontal dashed lines at averaged y positions (extend to match canvas width)
     for avg_y in averaged_centers_y:
         draw_dashed_line(grid_cross_layer, (0, avg_y), (canvas_width, avg_y), color=(0, 0, 0, 255))
 
@@ -426,8 +444,7 @@ def overlay_images(base_image, overlay_image):
     # Update the alpha channel
     base_image[:, :, 3] = np.maximum(base_image[:, :, 3], overlay_image[:, :, 3])
 
-
-def combine_all_layers(layers, output_path, canvas_size):
+def combine_all_layers(layers, output_path, canvas_size, grid_layer_path=None):
     """
     Combine all specified layers from bottom to top with a white background.
 
@@ -435,6 +452,7 @@ def combine_all_layers(layers, output_path, canvas_size):
     - layers: List of layer image paths in order from topmost to bottommost.
     - output_path: Path to save the final combined image.
     - canvas_size: Tuple of (width, height) for the canvas size.
+    - grid_layer_path: Path to the grid layer to overlay at the center without scaling.
     """
     width, height = canvas_size
 
@@ -444,19 +462,25 @@ def combine_all_layers(layers, output_path, canvas_size):
     final_image[:, :, 3] = 255  # Set alpha to fully opaque
 
     # Overlay each layer in reverse order (bottom to top)
-    for layer_path in reversed(layers):  # Reversed order
+    for layer_path in reversed(layers):
         layer_img = load_image_with_alpha(layer_path)
 
-        # Ensure the layer image matches the canvas size
-        if layer_img.shape[:2] != (height, width):
-            layer_img = cv2.resize(layer_img, (width, height))
+        if layer_path == grid_layer_path:
+            # Overlay the grid layer at the center without scaling
+            final_image = overlay_images_at_center(final_image, layer_img)
+        else:
+            # Resize other layers to match the canvas size
+            if layer_img.shape[:2] != (height, width):
+                layer_img = cv2.resize(layer_img, (width, height))
 
-        # Overlay the layer on the final image
-        overlay_images(final_image, layer_img)
+            # Overlay the layer on the final image
+            overlay_images(final_image, layer_img)
 
     # Save the final combined image as a PNG
     save_image_with_alpha(final_image, output_path)
 
+  
+    
 def add_padding_to_json(json_data, padding_percentage=0.20):
     """
     Adjusts the coordinates in the JSON data to account for added padding.
@@ -524,7 +548,19 @@ def calculate_square_reinforcement(footing_size, footing_thickness, bar_diameter
 
 import random
 
-def create_footing_info_layer(image_path, output_path, reinforcement_diameter, number_of_storeys, conversion_factor=1, offset=10):
+def create_footing_info_layer(image_path, output_path, footing_size_cm, reinforcement_diameter, number_of_storeys, conversion_factor=1, offset=10):
+    """
+    Create an annotation layer for footing information, including reinforcement details.
+
+    Parameters:
+    - image_path: Path to the input footing image.
+    - output_path: Path to save the footing info layer.
+    - footing_size_cm: Size of the footing in cm.
+    - reinforcement_diameter: Diameter of reinforcement bars in mm.
+    - number_of_storeys: Number of storeys (1 or 2).
+    - conversion_factor: Conversion factor for units (default 1).
+    - offset: Vertical offset for text annotations (default 10).
+    """
     # Load the image
     img = load_image_with_alpha(image_path)
     binary_mask = create_binary_mask_from_alpha(img)
@@ -556,22 +592,19 @@ def create_footing_info_layer(image_path, output_path, reinforcement_diameter, n
         # Use the closest footing
         x, y, w, h = closest_footing_bbox
 
-        # Placeholder for number of reinforcement bars
-        number_of_bars = compute_reinforcement_bars()
-        
-        # TODO: Fix
-        # footing_size, footing_thickness, bar_diameter, concrete_cover needs things
-        # number_of_bars = calculate_square_reinforcement(footing_size, footing_thickness, bar_diameter, concrete_cover)
+        # Calculate the number of reinforcement bars and spacing
+        reinforcement_info = calculate_square_reinforcement(footing_size_cm, 225, reinforcement_diameter, 75)
+        number_of_bars = reinforcement_info['no_of_bars']
+        spacing = reinforcement_info['spacing']
 
-        # Determine depth of footing based on number of storeys
+        # Determine depth of footing based on the number of storeys
         depth_of_footing = 1125 if number_of_storeys == 1 else 1425
-        
-        
+
         # Prepare text lines
         text_lines = [
             "Concrete Cover: 75 mm",
             "Footing Thickness: 225 mm",
-            f"Reinforcement: {number_of_bars} pcs - {reinforcement_diameter} mm diameter",
+            f"Reinforcement: {number_of_bars} pcs Desformed Steel Bar - {reinforcement_diameter} mm diameter - Spacing: {spacing:.1f} mm",
             f"Depth of Footing: {depth_of_footing} mm ({number_of_storeys} storey{'s' if number_of_storeys > 1 else ''})"
         ]
 
@@ -634,6 +667,44 @@ def create_footing_info_layer(image_path, output_path, reinforcement_diameter, n
     print(f"Footing info layer saved at {output_path}")
 
 
+def overlay_images_at_center(base_image, overlay_image):
+    """
+    Overlay one image on top of another at the center of the base image, without resizing, handling transparency.
+
+    Parameters:
+    - base_image: The base image.
+    - overlay_image: The image to overlay at the center.
+
+    Returns:
+    - base_image: The modified base image with the overlay.
+    """
+    base_h, base_w = base_image.shape[:2]
+    overlay_h, overlay_w = overlay_image.shape[:2]
+
+    # Calculate the top-left corner for overlay placement
+    x_offset = (base_w - overlay_w) // 2
+    y_offset = (base_h - overlay_h) // 2
+
+    # Ensure overlay fits within the base image dimensions
+    if x_offset < 0 or y_offset < 0:
+        raise ValueError("Overlay image is larger than the base image.")
+
+    # Iterate over RGB channels and alpha channel to blend the overlay image onto the base image
+    for c in range(3):  # For each RGB channel
+        base_image[y_offset:y_offset + overlay_h, x_offset:x_offset + overlay_w, c] = (
+            overlay_image[:, :, c] * (overlay_image[:, :, 3] / 255.0)
+            + base_image[y_offset:y_offset + overlay_h, x_offset:x_offset + overlay_w, c] * (1 - (overlay_image[:, :, 3] / 255.0))
+        )
+
+    # Update the alpha channel
+    base_image[y_offset:y_offset + overlay_h, x_offset:x_offset + overlay_w, 3] = np.maximum(
+        base_image[y_offset:y_offset + overlay_h, x_offset:x_offset + overlay_w, 3], overlay_image[:, :, 3]
+    )
+
+    return base_image
+
+   
+
 # Main script to process the images
 if __name__ == "__main__":
     # Input and output file paths
@@ -653,8 +724,8 @@ if __name__ == "__main__":
     final_combined_output = 'static/images/final_combined_image.png'
 
     # Parameters
-    expansion_amount_columns = int(10 * column_scale) # type: ignore
-    expansion_amount_footing = int(90  * footing_scale) # type: ignore
+    expansion_amount_columns = int(10 * column_scale)
+    expansion_amount_footing = int(90  * footing_scale)
     padding_amount_walls = 40
     conversion_factor = 6.923  # Example conversion factor (cm/px)
     offset = 10  # Offset for annotations
@@ -695,8 +766,8 @@ if __name__ == "__main__":
     combine_layers_and_add_dashed_outline(footing_output, padded_walls_output, combined_layer_output)
 
     # Step 10: Create footing information layer
-    reinforcement_diameter = barsize_value  # type: ignore # User input (in mm)
-    number_of_storeys = num_storey_value  # type: ignore # User input (1 or 2)
+    reinforcement_diameter = barsize_value  # User input (in mm)
+    number_of_storeys = num_storey_value  # User input (1 or 2)
     create_footing_info_layer(footing_output, footing_info_output, reinforcement_diameter, number_of_storeys, conversion_factor, offset)
 
     # Step 11: Combine all layers into the final image

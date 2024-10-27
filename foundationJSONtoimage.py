@@ -66,16 +66,31 @@ class ConditionalVAE(nn.Module):
 
 
 def paste_image(layout, img, start_point, end_point=None):
-    x1, y1 = start_point
-    x2, y2 = end_point
+    # Ensure start and end points are integers
+    x1, y1 = map(int, start_point)
+    x2, y2 = map(int, end_point)
 
     # Calculate width and height for resizing
     width = max(1, x2 - x1)  # Ensure width is at least 1
     height = max(1, y2 - y1)  # Ensure height is at least 1
 
+    # Debugging: Print the dimensions
+    print(f"Resizing image to: Width = {width}, Height = {height}")
+
     # Resize image to fit within the specified region
     img = (img * 255).astype(np.uint8)  # Convert to 8-bit
-    img = cv2.resize(img, (width, height))
+
+    # Check if img is a valid image
+    if img is None or img.size == 0:
+        print("Error: Image is empty or None.")
+        return
+
+    # Resize image with OpenCV
+    try:
+        img = cv2.resize(img, (width, height))
+    except cv2.error as e:
+        print(f"Error resizing image: {e}")
+        return
 
     # Ensure the image has an alpha channel
     if len(img.shape) == 2:
@@ -83,8 +98,12 @@ def paste_image(layout, img, start_point, end_point=None):
     elif img.shape[2] == 1:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGRA)
 
-    # Paste the image on the layout at the specified location
-    layout[y1:y2, x1:x2, :] = img
+    # Ensure the layout has sufficient dimensions
+    if layout.shape[0] >= y2 and layout.shape[1] >= x2:
+        # Paste the image on the layout at the specified location
+        layout[y1:y2, x1:x2, :] = img
+    else:
+        print("Error: Layout dimensions are smaller than the paste region.")
 
 # Generate solid rectangles for walls
 
@@ -156,8 +175,8 @@ def generate_layout(model, json_file):
                     end_point)  # Paste column on the layout
 
     # Add 30% padding to the wall and column layouts
-    wall_layout_padded, pad_w, pad_h = add_padding(wall_layout, padding_percentage=0.3)
-    column_layout_padded, _, _ = add_padding(column_layout, padding_percentage=0.3)
+    wall_layout_padded, pad_w, pad_h = add_padding(wall_layout, padding_percentage=0.2)
+    column_layout_padded, _, _ = add_padding(column_layout, padding_percentage=0.2)
     
     
     # Save wall and column layouts as separate images with transparency
@@ -230,8 +249,8 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     # Step 5: Create wall annotation layer
     create_wall_annotation_layer(padded_json_output, wall_annotation_output, conversion_factor=1)
 
-    # Step 6: Create footing annotation layer
-    create_manual_footing_annotation_layer(footing_output, footing_annotation_output, conversion_factor, offset)
+    # Step 6: Create footing annotation layer and get footing size
+    footing_annotation_layer, footing_size_cm = create_manual_footing_annotation_layer(footing_output, conversion_factor, offset)
 
     # Step 7: Create expanded column annotation layer
     create_expanded_column_annotation_layer(expanded_columns_output, column_annotation_output, conversion_factor, offset)
@@ -247,15 +266,14 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     # Step 10: Create footing information layer
     reinforcement_diameter = barsize_value  # User input (in mm)
     number_of_storeys = num_storey_value  # User input (1 or 2)
-    create_footing_info_layer(footing_output, footing_info_output, reinforcement_diameter, number_of_storeys, conversion_factor, offset)
-
+    create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys, conversion_factor, offset)
     # Step 11: Combine all layers into the final image
     layers = [
         wall_annotation_output,
         footing_annotation_output,
         column_annotation_output,
-        grid_cross_output,
         footing_info_output,          # New layer with footing info
+        grid_cross_output,
         expanded_columns_output,
         combined_layer_output  # Bottommost layer
     ]

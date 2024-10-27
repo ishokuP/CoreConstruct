@@ -11,9 +11,9 @@ from werkzeug.utils import secure_filename
 from floorplantojson import process_image
 from jsonFormatter import transform_predictions
 from addfeature import transfer_canvas_dimensions
-from JSONReinforcement import mainReinforcement
 from foundationJSONtoimage import generateFoundationPlan
 from ANN import test_model
+from RL import rl_module
 
 
 # Define the mappings
@@ -180,7 +180,8 @@ def analyze_generate():
     #   This is for the floorplan JSON to foundation JSON
     #
 
-    mainReinforcement()
+    rl_module()
+    
 
     #
     # This is for sending the Features such as soil properties etc to the JSON
@@ -214,6 +215,7 @@ def analyze_generate():
     # Call the ANN model with the prepared input
 
     column_scale, footing_scale = test_model(single_input)
+    print(column_scale)
     
 
     foundationplanjson = os.path.join(
