@@ -225,6 +225,47 @@
                                 </div>
                             </div>
                         </div>
+
+                        <button onclick="toggleFields('reinforcementDetail', 'arrowReinforcementDetail')">
+                            <div id="arrowReinforcementDetail" class="arrow"></div>
+                            Reinforcement Detail
+                        </button><br>
+    
+                        <div id="reinforcementDetail" class="input-fields">
+    
+                            <div class="section">
+                                <button onclick="toggleFields('barSize', 'arrowReinforcementDetail')">
+                                    <div id="arrowReinforcementDetail" class="arrow"></div>
+                                    Bar Size
+                                </button>
+    
+                                <div class="section">
+                                    <div class="select-group" id="barSize">
+                                        <button id="button" class="button">
+                                            <span id="select-label">Select Bar Size*</span>
+                                            <div id="arrow" class="arrow"></div>
+                                        </button>
+                                        <div class="dropdown hidden" id="barSize">
+                                            <input type="radio" id="10mm" name="barSize" value="10mm"
+                                                class="option">
+                                            <label for="10mm" class="select-item">10mm</label>
+    
+                                            <input type="radio" id="12mm" name="barSize" value="12mm"
+                                                class="option">
+                                            <label for="12mm" class="select-item">12mm</label>
+    
+                                            <input type="radio" id="16mm" name="barSize" value="16mm"
+                                                class="option">
+                                            <label for="16mm" class="select-item">16mm</label>
+    
+                                            <input type="radio" id="20mm" name="barSize" value="20mm"
+                                                class="option">
+                                            <label for="20mm" class="select-item">20mm</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
