@@ -227,9 +227,8 @@ form{
     scrollbar-color: #435379 #4A5F8F;  
 }
 
-
 .input-fields {
-    display: none;
+    display: block;
 }
 
 .input-parameters {
@@ -267,7 +266,7 @@ button.indented-button {
 
 .select-group {
     position: relative;
-    display: none;
+    display: block;
 }
 
 .button {
@@ -312,6 +311,7 @@ button#button.button {
 }
 
 .dropdown {
+    display: block;
     width: 100%;
     top: 2.0rem;
     box-sizing: border-box;

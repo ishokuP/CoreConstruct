@@ -100,44 +100,83 @@
                     </table>
 
                     <div class="specs">
-                        <button type="button" onclick="toggleFields('soilProperties', 'arrowSoilProperties')">
-                            <div id="arrowSoilProperties" class="arrow"></div>
-                            Soil Properties
+                        <button type="button" onclick="toggleFields('locationProperties', 'arrowLocationProperties')">
+                            <div id="arrowLocationProperties" class="arrow"></div>
+                            Location
                         </button><br>
 
-                        {# Soil Properties #}
-                        <div id="soilProperties" class="input-fields">
-
-                            <div class="section">
-                                <button type="button" onclick="toggleFields('soilType', 'arrowSoilType')" class="indented-button">
-                                    <div id="arrowSoilType" class="arrow"></div>
-                                    Soil Type
+                        <div class="section">
+                            <div class="select-group" id="locationProperties">
+                                <button type="button" id="button" class="button">
+                                    <span id="select-label">Select Location</span>
+                                    <div id="arrow" class="arrow"></div>
                                 </button>
+                                <div class="dropdown" id="location">
+                                    <input type="radio" id="metroManila" name="location" value="metroManila"
+                                        class="option">
+                                    <label for="metroManila" class="select-item">Metro Manila</label>
 
-                                <div class="section">
-                                    <div class="select-group" id="soilType">
-                                        <button type="button" id="button" class="button">
-                                            <span id="select-label">Select Soil Type*</span>
-                                            <div id="arrow" class="arrow"></div>
-                                        </button>
-                                        <div class="dropdown hidden" id="soilType">
-                                            <input type="radio" id="clay" name="soilType" value="clay" class="option">
-                                            <label for="clay" class="select-item">Clay</label>
+                                    <input type="radio" id="Cebu" name="location" value="Cebu" class="option">
+                                    <label for="Cebu" class="select-item">Cebu</label>
 
-                                            <input type="radio" id="silt" name="soilType" value="silt" class="option">
-                                            <label for="silt" class="select-item">Silt</label>
+                                    <input type="radio" id="Palawan" name="location" value="Palawan" class="option">
+                                    <label for="Palawan" class="select-item">Palawan</label>
 
-                                            <input type="radio" id="loam" name="soilType" value="loam" class="option">
-                                            <label for="loam" class="select-item">Loam</label>
+                                    <input type="radio" id="Davao" name="location" value="Davao" class="option">
+                                    <label for="Davao" class="select-item">Davao</label>
 
-                                            <input type="radio" id="sand" name="soilType" value="sand" class="option">
-                                            <label for="sand" class="select-item">Sand</label>
-                                        </div>
-                                    </div>
+                                    <input type="radio" id="Batanes" name="location" value="Batanes" class="option">
+                                    <label for="Batanes" class="select-item">Batanes</label>
+
+                                    <input type="radio" id="Iloilo" name="location" value="Iloilo" class="option">
+                                    <label for="Iloilo" class="select-item">Iloilo</label>
+
+                                    <input type="radio" id="Leyte" name="location" value="Leyte" class="option">
+                                    <label for="Leyte" class="select-item">Leyte</label>
+
+                                    <input type="radio" id="Zamboanga" name="location" value="Zamboanga" class="option">
+                                    <label for="Zamboanga" class="select-item">Zamboanga</label>
+
+                                    <input type="radio" id="Pangasinan" name="location" value="Pangasinan"
+                                        class="option">
+                                    <label for="Pangasinan" class="select-item">Pangasinan</label>
+
+                                    <input type="radio" id="Cagayan" name="location" value="Cagayan" class="option">
+                                    <label for="Cagayan" class="select-item">Cagayan</label>
+
+                                    <input type="radio" id="negrosOccidental" name="location" value="negrosOccidental"
+                                        class="option">
+                                    <label for="negrosOccidental" class="select-item">Negros Occidental</label>
+
+                                    <input type="radio" id="Bukidnon" name="location" value="Bukidnon" class="option">
+                                    <label for="Bukidnon" class="select-item">Bukidnon</label>
+
+                                    <input type="radio" id="Surigao" name="location" value="Surigao" class="option">
+                                    <label for="Surigao" class="select-item">Surigao</label>
+
+                                    <input type="radio" id="ilocosNorte" name="location" value="ilocosNorte"
+                                        class="option">
+                                    <label for="ilocosNorte" class="select-item">Ilocos Norte</label>
+
+                                    <input type="radio" id="misamisOriental" name="location" value="misamisOriental"
+                                        class="option">
+                                    <label for="misamisOriental" class="select-item">Misamis Oriental</label>
+
+                                    <input type="radio" id="Benguet" name="location" value="Benguet" class="option">
+                                    <label for="Benguet" class="select-item">Benguet</label>
+
+                                    <input type="radio" id="Batangas" name="location" value="Batangas" class="option">
+                                    <label for="Batangas" class="select-item">Batangas</label>
+
+                                    <input type="radio" id="Quezon" name="location" value="Quezon" class="option">
+                                    <label for="Quezon" class="select-item">Quezon</label>
+
+                                    <input type="radio" id="Albay" name="location" value="Albay" class="option">
+                                    <label for="Albay" class="select-item">Albay</label>
                                 </div>
                             </div>
-
                         </div>
+                        <!-- </div> -->
 
                         <button type="button" onclick="toggleFields('buildingInfo', 'arrowBuildingInfo')">
                             <div id="arrowBuildingInfo" class="arrow"></div>
@@ -147,7 +186,8 @@
                         <div id="buildingInfo" class="input-fields">
 
                             <div class="section">
-                                <button type="button" onclick="toggleFields('buildingType', 'arrowBuildingType')" class="indented-button">
+                                <button type="button" onclick="toggleFields('buildingType', 'arrowBuildingType')"
+                                    class="indented-button">
                                     <div id="arrowBuildingType" class="arrow"></div>
                                     Building Type
                                 </button>
@@ -158,7 +198,7 @@
                                             <span id="select-label">Select Building Type*</span>
                                             <div id="arrow" class="arrow"></div>
                                         </button>
-                                        <div class="dropdown hidden" id="buildingType">
+                                        <div class="dropdown" id="buildingType">
                                             <input type="radio" id="residential" name="buildingType" value="residential"
                                                 class="option">
                                             <label for="residential" class="select-item">Residential</label>
@@ -172,7 +212,8 @@
                             </div>
 
                             <div class="section">
-                                <button type="button" onclick="toggleFields('numStorey', 'arrowNumStorey')" class="indented-button">
+                                <button type="button" onclick="toggleFields('numStorey', 'arrowNumStorey')"
+                                    class="indented-button">
                                     <div id="arrowNumStorey" class="arrow"></div>
                                     Number of Storeys
                                 </button>
@@ -183,7 +224,7 @@
                                             <span id="select-label">Select Number of Storey*</span>
                                             <div id="arrow" class="arrow"></div>
                                         </button>
-                                        <div class="dropdown hidden" id="buildingType">
+                                        <div class="dropdown" id="buildingType">
                                             <input type="radio" id="1storey" name="numStorey" value="1storey"
                                                 class="option">
                                             <label for="1storey" class="select-item">1-storey Building</label>
@@ -198,7 +239,8 @@
 
                             <div class="section">
 
-                                <button type="button" onclick="toggleFields('materialSpecs', 'arrowMaterialSpecs')" class="indented-button">
+                                <button type="button" onclick="toggleFields('materialSpecs', 'arrowMaterialSpecs')"
+                                    class="indented-button">
                                     <div id="arrowMaterialSpecs" class="arrow"></div>
                                     Material Specifications
                                 </button>
@@ -209,7 +251,7 @@
                                             <span id="select-label">Select Material Specs*</span>
                                             <div id="arrow" class="arrow"></div>
                                         </button>
-                                        <div class="dropdown hidden" id="materialSpecs">
+                                        <div class="dropdown" id="materialSpecs">
                                             <input type="radio" id="steel" name="materialSpecs" value="steel"
                                                 class="option">
                                             <label for="steel" class="select-item">Steel</label>
@@ -224,37 +266,65 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="section">
+                                <button type="button" onclick="toggleFields('roofType', 'arrowRoofType')"
+                                    class="indented-button">
+                                    <div id="arrowRoofType" class="arrow"></div>
+                                    Roof Type
+                                </button>
+
+                                <div class="section">
+                                    <div class="select-group" id="roofType">
+                                        <button type="button" id="button" class="button">
+                                            <span id="select-label">Select Roof Type*</span>
+                                            <div id="arrow" class="arrow"></div>
+                                        </button>
+                                        <div class="dropdown" id="buildingType">
+                                            <input type="radio" id="flat" name="roofType" value="flat"
+                                                class="option">
+                                            <label for="flat" class="select-item">Flat</label>
+
+                                            <input type="radio" id="sloped" name="roofType" value="sloped"
+                                                class="option">
+                                            <label for="sloped" class="select-item">Sloped</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
                         <button onclick="toggleFields('reinforcementDetail', 'arrowReinforcementDetail')" type="button">
                             <div id="arrowReinforcementDetail" class="arrow"></div>
                             Reinforcement Detail
                         </button><br>
-    
+
                         <div id="reinforcementDetail" class="input-fields">
 
                             <div class="section">
-                                <button type="button" onclick="toggleFields('barSize', 'arrowReinforcementDetail')" class="indented-button">
-                                    <div id="arrowReinforcementDetail" class="arrow"></div>
+                                <button type="button" onclick="toggleFields('barSize', 'arrowBarSize')"
+                                    class="indented-button">
+                                    <div id="arrowBarSize" class="arrow"></div>
                                     Bar Size
                                 </button>
-                        
+
                                 <div class="section">
                                     <div class="select-group" id="barSize">
                                         <button type="button" id="button" class="button">
                                             <span id="select-label">Select Bar Size*</span>
                                             <div id="arrow" class="arrow"></div>
                                         </button>
-                                        <div class="dropdown hidden" id="barSize">
+                                        <div class="dropdown" id="barSize">
                                             <input type="radio" id="10mm" name="barSize" value="10mm" class="option">
                                             <label for="10mm" class="select-item">10mm</label>
-                        
+
                                             <input type="radio" id="12mm" name="barSize" value="12mm" class="option">
                                             <label for="12mm" class="select-item">12mm</label>
-                        
+
                                             <input type="radio" id="16mm" name="barSize" value="16mm" class="option">
                                             <label for="16mm" class="select-item">16mm</label>
-                        
+
                                             <input type="radio" id="20mm" name="barSize" value="20mm" class="option">
                                             <label for="20mm" class="select-item">20mm</label>
                                         </div>
@@ -262,7 +332,6 @@
                                 </div>
                             </div>
                         </div>
-                        
                     </div>
                 </div>
 
