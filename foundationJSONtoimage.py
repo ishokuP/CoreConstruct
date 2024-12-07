@@ -192,7 +192,7 @@ def generate_layout(model, json_file):
 # Load the trained VAE model and generate layout based on JSON
 
 
-def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_value,barsize_value,model_path='models/vae/vae_final.pth'):
+def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_value,barsize_value,soil_type,location,model_path='models/vae/vae_final.pth'):
     # Initialize VAE and load trained weights
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -268,7 +268,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     # Step 10: Create footing information layer
     reinforcement_diameter = barsize_value  # User input (in mm)
     number_of_storeys = num_storey_value  # User input (1 or 2)
-    create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys, conversion_factor, offset)
+    create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys,json_file_path,soil_type,location, conversion_factor, offset)
     # Step 11: Combine all layers into the final image
     layers = [
         wall_annotation_output,

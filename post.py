@@ -548,7 +548,7 @@ def calculate_square_reinforcement(footing_size, footing_thickness, bar_diameter
 
 import random
 
-def create_footing_info_layer(image_path, output_path, footing_size_cm, reinforcement_diameter, number_of_storeys, conversion_factor=1, offset=10):
+def create_footing_info_layer(image_path, output_path, footing_size_cm, reinforcement_diameter, number_of_storeys,json_file_path,soil_type,location, conversion_factor=1, offset=10):
     """
     Create an annotation layer for footing information, including reinforcement details.
 
@@ -601,12 +601,26 @@ def create_footing_info_layer(image_path, output_path, footing_size_cm, reinforc
         depth_of_footing = 1125 if number_of_storeys == 1 else 1425
 
         # Prepare text lines
+        
+        from load_calculation2 import mainFunction
+        
+        
+        deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,foundationLoad = mainFunction(json_file_path,soil_type,location)
+        
         text_lines = [
             "Concrete Cover: 75 mm",
             "Footing Thickness: 225 mm",
             f"Reinforcement: {number_of_bars} pcs Desformed Steel Bar - {reinforcement_diameter} mm diameter - Spacing: {spacing:.1f} mm",
-            f"Depth of Footing: {depth_of_footing} mm ({number_of_storeys} storey{'s' if number_of_storeys > 1 else ''})"
+            f"Depth of Footing: {depth_of_footing} mm ({number_of_storeys} storey{'s' if number_of_storeys > 1 else ''})",
+            f"Dead Load: {deadLoad} kN = {wallLoad} kN + {floorLoad} kN + {roofLoad} kN ",
+            f"Total Live Load: {liveLoad} kN ",
+            f"Average Wind Load: {windLoad} kN",
+            f"Seismic Load: {seismicLoad} kN",
+            f"Total Building Load: {totalLoad} kN",
+            f"Total Foundation Load: {foundationLoad} kN"
         ]
+        
+        # TODO: Text Lines
 
         # Set text properties
         font = cv2.FONT_HERSHEY_SIMPLEX

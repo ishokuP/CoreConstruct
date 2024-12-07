@@ -82,6 +82,8 @@ def analyze_generate():
     num_storey = request.form.get('numStorey')
     material_spec = request.form.get('materialSpecs')
     barSize = request.form.get('barSize')
+    location = request.form.get('location')
+    roofType = request.form.get('roofType')
 
     # Print the values received for debugging
     print(f"Uploaded File: {uploaded_file.filename if uploaded_file else 'No file uploaded'}")
@@ -90,6 +92,8 @@ def analyze_generate():
     print(f"Number of Storeys: {num_storey}")
     print(f"Material Spec: {material_spec}")
     print(f"Bar Size: {barSize}")
+    print(f"Location: {location}")
+    print(f"Roof Type: {roofType}")
 
     # Perform backend validation
     missing_fields = []
@@ -220,7 +224,7 @@ def analyze_generate():
 
     foundationplanjson = os.path.join(
         app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
-    generateFoundationPlan(foundationplanjson, column_scale, footing_scale,num_storey_value,barsize_value)
+    generateFoundationPlan(foundationplanjson, column_scale, footing_scale,num_storey_value,barsize_value,soil_type,location,roofType,slopeAngle=None)
 
     # TODO: post.py and file association
 
