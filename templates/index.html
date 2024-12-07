@@ -81,7 +81,8 @@
             <div class="workspace-header">
                 <h3>INPUT PARAMETERS</h3>
             </div>
-            <form action="/analyze_generate" method="POST" enctype="multipart/form-data"style="overflow: hidden; max-width: 100%; max-height: 100%;">
+            <form action="/analyze_generate" method="POST" enctype="multipart/form-data"
+                style="overflow: hidden; max-width: 100%; max-height: 100%;">
                 <div class="input-specs">
                     <table>
                         <tr>
@@ -266,91 +267,166 @@
                                     </div>
                                 </div>
                             </div>
+                            <button onclick="toggleFields('reinforcementDetail', 'arrowReinforcementDetail')"
+                                type="button">
+                                <div id="arrowReinforcementDetail" class="arrow"></div>
+                                Reinforcement Detail
+                            </button><br>
 
-                            <div class="section">
-                                <button type="button" onclick="toggleFields('roofType', 'arrowRoofType')"
-                                    class="indented-button">
-                                    <div id="arrowRoofType" class="arrow"></div>
-                                    Roof Type
-                                </button>
+                            <div id="reinforcementDetail" class="input-fields">
 
                                 <div class="section">
-                                    <div class="select-group" id="roofType">
-                                        <button type="button" id="button" class="button">
-                                            <span id="select-label">Select Roof Type*</span>
-                                            <div id="arrow" class="arrow"></div>
-                                        </button>
-                                        <div class="dropdown" id="buildingType">
-                                            <input type="radio" id="flat" name="roofType" value="flat"
-                                                class="option">
-                                            <label for="flat" class="select-item">Flat</label>
+                                    <button type="button" onclick="toggleFields('barSize', 'arrowBarSize')"
+                                        class="indented-button">
+                                        <div id="arrowBarSize" class="arrow"></div>
+                                        Bar Size
+                                    </button>
 
-                                            <input type="radio" id="sloped" name="roofType" value="sloped"
-                                                class="option">
-                                            <label for="sloped" class="select-item">Sloped</label>
+                                    <div class="section">
+                                        <div class="select-group" id="barSize">
+                                            <button type="button" id="button" class="button">
+                                                <span id="select-label">Select Bar Size*</span>
+                                                <div id="arrow" class="arrow"></div>
+                                            </button>
+                                            <div class="dropdown" id="barSize">
+                                                <input type="radio" id="10mm" name="barSize" value="10mm"
+                                                    class="option">
+                                                <label for="10mm" class="select-item">10mm</label>
+
+                                                <input type="radio" id="12mm" name="barSize" value="12mm"
+                                                    class="option">
+                                                <label for="12mm" class="select-item">12mm</label>
+
+                                                <input type="radio" id="16mm" name="barSize" value="16mm"
+                                                    class="option">
+                                                <label for="16mm" class="select-item">16mm</label>
+
+                                                <input type="radio" id="20mm" name="barSize" value="20mm"
+                                                    class="option">
+                                                <label for="20mm" class="select-item">20mm</label>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                        </div>
-
-                        <button onclick="toggleFields('reinforcementDetail', 'arrowReinforcementDetail')" type="button">
-                            <div id="arrowReinforcementDetail" class="arrow"></div>
-                            Reinforcement Detail
-                        </button><br>
-
-                        <div id="reinforcementDetail" class="input-fields">
-
                             <div class="section">
-                                <button type="button" onclick="toggleFields('barSize', 'arrowBarSize')"
+                                <button type="button" onclick="toggleFields('roofPitch', 'arrowRoofPitch')"
                                     class="indented-button">
-                                    <div id="arrowBarSize" class="arrow"></div>
-                                    Bar Size
+                                    <div id="arrowRoofPitch" class="arrow"></div>
+                                    Roof Pitch
                                 </button>
 
                                 <div class="section">
-                                    <div class="select-group" id="barSize">
+                                    <div class="select-group" id="roofPitch">
                                         <button type="button" id="button" class="button">
-                                            <span id="select-label">Select Bar Size*</span>
+                                            <span id="select-label">Select Roof Pitch*</span>
                                             <div id="arrow" class="arrow"></div>
                                         </button>
-                                        <div class="dropdown" id="barSize">
-                                            <input type="radio" id="10mm" name="barSize" value="10mm" class="option">
-                                            <label for="10mm" class="select-item">10mm</label>
+                                        <div class="dropdown hidden" id="roofPitch">
+                                            <input type="radio" id="fourOverTwelve" name="roofPitch"
+                                                value="fourOverTwelve" class="option">
+                                            <label for="fourOverTwelve" class="select-item">4/12</label>
 
-                                            <input type="radio" id="12mm" name="barSize" value="12mm" class="option">
-                                            <label for="12mm" class="select-item">12mm</label>
+                                            <input type="radio" id="sixOverTwelve" name="roofPitch"
+                                                value="sixOverTwelve" class="option">
+                                            <label for="sixOverTwelve" class="select-item">6/12</label>
 
-                                            <input type="radio" id="16mm" name="barSize" value="16mm" class="option">
-                                            <label for="16mm" class="select-item">16mm</label>
+                                            <input type="radio" id="eightOverTwelve" name="roofPitch"
+                                                value="eightOverTwelve" class="option">
+                                            <label for="eightOverTwelve" class="select-item">8/12</label>
 
-                                            <input type="radio" id="20mm" name="barSize" value="20mm" class="option">
-                                            <label for="20mm" class="select-item">20mm</label>
+                                            <input type="radio" id="twelveOverTwelve" name="roofPitch"
+                                                value="twelveOverTwelve" class="option">
+                                            <label for="twelveOverTwelve" class="select-item">12/12</label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="section">
+                        <button type="button" onclick="toggleFields('roofType', 'arrowRoofType')"
+                            class="indented-button">
+                            <div id="arrowRoofType" class="arrow"></div>
+                            Roof Type
+                        </button>
+
+                        <div class="section">
+                            <div class="select-group" id="roofType">
+                                <button type="button" id="button" class="button">
+                                    <span id="select-label">Select Roof Type*</span>
+                                    <div id="arrow" class="arrow"></div>
+                                </button>
+                                <div class="dropdown" id="buildingType">
+                                    <input type="radio" id="flat" name="roofType" value="flat" class="option">
+                                    <label for="flat" class="select-item">Flat</label>
+
+                                    <input type="radio" id="sloped" name="roofType" value="sloped" class="option">
+                                    <label for="sloped" class="select-item">Sloped</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
+                <button onclick="toggleFields('reinforcementDetail', 'arrowReinforcementDetail')" type="button">
+                    <div id="arrowReinforcementDetail" class="arrow"></div>
+                    Reinforcement Detail
+                </button><br>
 
-                <div class="generate-btn">
-                    <button type="submit">Analyze & Generate</button>
+                <div id="reinforcementDetail" class="input-fields">
+
+                    <div class="section">
+                        <button type="button" onclick="toggleFields('barSize', 'arrowBarSize')" class="indented-button">
+                            <div id="arrowBarSize" class="arrow"></div>
+                            Bar Size
+                        </button>
+
+                        <div class="section">
+                            <div class="select-group" id="barSize">
+                                <button type="button" id="button" class="button">
+                                    <span id="select-label">Select Bar Size*</span>
+                                    <div id="arrow" class="arrow"></div>
+                                </button>
+                                <div class="dropdown" id="barSize">
+                                    <input type="radio" id="10mm" name="barSize" value="10mm" class="option">
+                                    <label for="10mm" class="select-item">10mm</label>
+
+                                    <input type="radio" id="12mm" name="barSize" value="12mm" class="option">
+                                    <label for="12mm" class="select-item">12mm</label>
+
+                                    <input type="radio" id="16mm" name="barSize" value="16mm" class="option">
+                                    <label for="16mm" class="select-item">16mm</label>
+
+                                    <input type="radio" id="20mm" name="barSize" value="20mm" class="option">
+                                    <label for="20mm" class="select-item">20mm</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </form>
 
         </div>
+    </div>
 
-        <div class="main">
-            <div class="content" id="content">
-                <img src="" alt="Generated Plan" id="generated-image"
-                    style="display: none; max-width: 100%; height: auto;" />
-                <p id="no-plan-message">No plan generated yet. Please input values and click the button to analyze &
-                    generate.</p>
-            </div>
+    <div class="generate-btn">
+        <button type="submit">Analyze & Generate</button>
+    </div>
+    </form>
+
+    </div>
+
+    <div class="main">
+        <div class="content" id="content">
+            <img src="" alt="Generated Plan" id="generated-image"
+                style="display: none; max-width: 100%; height: auto;" />
+            <p id="no-plan-message">No plan generated yet. Please input values and click the button to analyze &
+                generate.</p>
         </div>
+    </div>
     </div>
 
     <script src="{{ url_for('static', filename='index.js')}}"></script>
