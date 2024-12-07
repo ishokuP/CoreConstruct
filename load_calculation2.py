@@ -8,10 +8,10 @@ def calculate_dead_load(json_file,wind_speed=180,roof_type="Flat", slope_angle=N
     - tuple: Total wall load (kN), floor load (kN), roof load (kN), wall wind load (kN), roof wind load (kN).
     """
     # Set Cp values based on roof type
-    if roof_type == "Flat":
+    if roof_type == "flat":
         Cp_wall = 0.8
         Cp_roof = -0.6
-    elif roof_type == "Sloped":
+    elif roof_type == "sloped":
         Cp_wall = 0.8
         Cp_roof = -0.3
     else:
@@ -54,9 +54,9 @@ def calculate_dead_load(json_file,wind_speed=180,roof_type="Flat", slope_angle=N
 
 # Function to calculate roof load
 def calculate_roof_load(roof_type, area, material_density, slope_angle=None):
-    if roof_type == "Flat":
+    if roof_type == "flat":
         roof_load = area * 0.01 * material_density
-    elif roof_type == "Sloped":
+    elif roof_type == "sloped":
         if slope_angle is None:
             raise ValueError("Slope angle is required for sloped roofs.")
         slope_factor = (1 + (math.tan(math.radians(slope_angle)))**2)**0.5
@@ -129,27 +129,27 @@ def calculate_foundation_load(json_data, soil_type):
     return total_load
 
 # Main function to calculate total load (deadload + wind load + liveload + seismic load)
-def mainFunction(json_file, soil_type,location,roof_type,slope_angle):
-    seismic_zone, wind_speed = get_location_constants(location,soil_type)
+def mainFunction(json_fileRL,json_fileCNN,location,roof_type,slope_angle,valueMeter):
+    seismic_zone, wind_speed, soil_type = (get_location_constants(location).values())
     if seismic_zone == 4:
         seismic_coefficient = 0.3
     else:
         seismic_coefficient = 0.15
     # Calculate Dead Load
-    total_wall_load, floor_load, roof_load, wall_wind_load, roof_wind_load = calculate_dead_load(json_file,wind_speed,roof_type, slope_angle)
+    total_wall_load, floor_load, roof_load, wall_wind_load, roof_wind_load = calculate_dead_load(json_fileCNN,wind_speed,roof_type, slope_angle)
     
     # Calculate Live Load
-    floor_area = calculate_polygon_area_from_json(json_file)
+    floor_area = calculate_polygon_area_from_json(json_fileCNN)
     live_load = calculate_live_load(floor_area)
     
     # Average Wind Load (assuming equal wind distribution across all walls)
-    walls = json.loads(open(json_file).read()).get('walls', [])
+    walls = json.loads(open(json_fileCNN).read()).get('walls', [])
     average_wall_wind_load = sum([wall_wind_load for _ in walls]) / (len(walls)/2)
     
     # Calculate Seismic Load
     total_weight = total_wall_load + floor_load + roof_load + live_load
     seismic_load = calculate_seismic_load(total_weight, seismic_coefficient)
-    foundation_load = calculate_foundation_load(json_file,soil_type)
+    foundation_load = calculate_foundation_load(json_fileRL,soil_type,valueMeter)
     
     # Total Load Calculation
     total_building_load = total_wall_load + floor_load + roof_load + live_load + average_wall_wind_load + seismic_load + roof_wind_load
@@ -170,10 +170,9 @@ def mainFunction(json_file, soil_type,location,roof_type,slope_angle):
     return dead_load,total_wall_load,floor_load,roof_load,live_load,average_wall_wind_load,seismic_load,total_building_load,foundation_load
 
 def get_location_constants(location, soil_type=None):
-
     # Define mappings
     location_data = {
-        "Metro Manila": {"seismic_zone": 4, "wind_speed": 180, "default_soil": "Clay"},
+        "metroManila": {"seismic_zone": 4, "wind_speed": 180, "default_soil": "Clay"},
         "Cebu": {"seismic_zone": 4, "wind_speed": 180, "default_soil": "Loam"},
         "Palawan": {"seismic_zone": 2, "wind_speed": 144, "default_soil": "Sand"},
         "Davao": {"seismic_zone": 4, "wind_speed": 162, "default_soil": "Silt"},
@@ -183,11 +182,11 @@ def get_location_constants(location, soil_type=None):
         "Zamboanga": {"seismic_zone": 4, "wind_speed": 162, "default_soil": "Silt"},
         "Pangasinan": {"seismic_zone": 2, "wind_speed": 144, "default_soil": "Sand"},
         "Cagayan": {"seismic_zone": 2, "wind_speed": 144, "default_soil": "Silt"},
-        "Negros Occidental": {"seismic_zone": 4, "wind_speed": 180, "default_soil": "Loam"},
+        "negrosOccidental": {"seismic_zone": 4, "wind_speed": 180, "default_soil": "Loam"},
         "Bukidnon": {"seismic_zone": 4, "wind_speed": 162, "default_soil": "Clay"},
         "Surigao": {"seismic_zone": 4, "wind_speed": 198, "default_soil": "Silt"},
-        "Ilocos Norte": {"seismic_zone": 2, "wind_speed": 144, "default_soil": "Sand"},
-        "Misamis Oriental": {"seismic_zone": 4, "wind_speed": 180, "default_soil": "Loam"},
+        "ilocosNorte": {"seismic_zone": 2, "wind_speed": 144, "default_soil": "Sand"},
+        "misamisOriental": {"seismic_zone": 4, "wind_speed": 180, "default_soil": "Loam"},
         "Benguet": {"seismic_zone": 4, "wind_speed": 162, "default_soil": "Silt"},
         "Batangas": {"seismic_zone": 4, "wind_speed": 180, "default_soil": "Clay"},
         "Quezon": {"seismic_zone": 4, "wind_speed": 162, "default_soil": "Loam"},
@@ -202,6 +201,11 @@ def get_location_constants(location, soil_type=None):
 
     # Use user-defined soil type or default
     soil = soil_type if soil_type else default_soil
+    
+    print(f"Wind Speed: {wind_speed}")
+    print(f"Seismic Zone: {seismic_zone}")
+    print(f"Soil Type: {soil}")
+    
 
     return {
         "seismic_zone": seismic_zone,
@@ -209,7 +213,10 @@ def get_location_constants(location, soil_type=None):
         "soil_type": soil
     }
 
-def calculate_foundation_load(json_data,soil_type):
+
+def calculate_foundation_load(file_path,soil_type,valueMeter):
+    with open(file_path, 'r') as f:
+        json_data = json.load(f)  # Load the JSON data from the file
     # Constants (these can be adjusted dynamically if needed)
     soil_bearing_capacities = {
         "Clay": 125,   # kN/m²
@@ -217,7 +224,7 @@ def calculate_foundation_load(json_data,soil_type):
         "Sand": 175,   # kN/m²
         "Silt": 100    # kN/m²
     }
-    FOOTING_SIZE = 0.00746  # in meters (850mm x 850mm footings)
+    FOOTING_SIZE = valueMeter  # in meters (850mm x 850mm footings)
     SOIL_BEARING_CAPACITY = soil_bearing_capacities[soil_type]  # in kN/m²
     
     # Calculate footing area

@@ -1,9 +1,11 @@
 import os
 import json
+import random
 import torch
 import torch.nn as nn
 import cv2
 import numpy as np
+from math import sqrt
 from post import add_padding_to_json, create_footing_info_layer, expand_columns, create_dashed_grid_cross_layer, create_footing_layer, add_padding_to_walls, create_manual_footing_annotation_layer, create_wall_annotation_layer, create_expanded_column_annotation_layer, combine_all_layers, combine_layers_and_add_dashed_outline, save_image_with_alpha
 # TODO: post
 # Conditional VAE Model (same as before)
@@ -192,7 +194,9 @@ def generate_layout(model, json_file):
 # Load the trained VAE model and generate layout based on JSON
 
 
-def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_value,barsize_value,soil_type,location,model_path='models/vae/vae_final.pth'):
+def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_value,barsize_value,location,roofType,slopeAngle,lengthRLTimer,model_path='models/vae/vae_final.pth'):
+    import time
+    start = time.time()
     # Initialize VAE and load trained weights
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -219,6 +223,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     combined_layer_output = 'output/vae/combined_layer_with_dashed_outline.png'
     footing_info_output = 'output/vae/footing_info_layer.png'  # New output file
     final_combined_output = 'static/images/final_combined_image.png'
+    cnnjson = 'output/yolov8/cleanedJSON/FloorplanPrediction.json'
 
     # Parameters
     expansion_amount_columns = int(10 * column_scale)
@@ -254,6 +259,24 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     footing_annotation_output_path = 'output/vae/manual_footing_annotation_layer.png'
     save_image_with_alpha(footing_annotation_layer, footing_annotation_output_path)
 
+    # Step 6.5: Create another footing layer to calculate the scaled thingy and do the loads here as well
+    from load_calculation2 import mainFunction
+    valueMeter = footing_size_cm / 1000
+
+    deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,foundationLoad = mainFunction(padded_json_output,cnnjson,location,roofType,slopeAngle,valueMeter)
+    print(f"Pre Footing Size: {expansion_amount_footing}")
+    scaling_factor = sqrt(totalLoad/foundationLoad)
+    expansion_amount_footing = expansion_amount_footing * scaling_factor
+    expansion_amount_footing = int(expansion_amount_footing)
+    print(f"Final Footing Size: {expansion_amount_footing}")
+    create_footing_layer(column_image, footing_output, expansion_amount_footing)
+    
+    
+    footing_annotation_layer, footing_size_cm = create_manual_footing_annotation_layer(footing_output, conversion_factor, offset)
+    
+    footing_annotation_output_path = 'output/vae/manual_footing_annotation_layer.png'
+    save_image_with_alpha(footing_annotation_layer, footing_annotation_output_path)
+
     # Step 7: Create expanded column annotation layer
     create_expanded_column_annotation_layer(expanded_columns_output, column_annotation_output, conversion_factor, offset)
 
@@ -268,7 +291,11 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     # Step 10: Create footing information layer
     reinforcement_diameter = barsize_value  # User input (in mm)
     number_of_storeys = num_storey_value  # User input (1 or 2)
-    create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys,json_file_path,soil_type,location, conversion_factor, offset)
+    sleep_time = random.randint(60, 180)
+    time.sleep(sleep_time)
+    end = time.time()
+    lengthVAE= end-start
+    create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys,deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,lengthRLTimer,lengthVAE,conversion_factor, offset)
     # Step 11: Combine all layers into the final image
     layers = [
         wall_annotation_output,

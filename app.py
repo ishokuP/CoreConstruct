@@ -14,14 +14,15 @@ from addfeature import transfer_canvas_dimensions
 from foundationJSONtoimage import generateFoundationPlan
 from ANN import test_model
 from RL import rl_module
+from load_calculation2 import get_location_constants
 
 
 # Define the mappings
 soil_type_map = {
-    "clay": 1,
-    "silt": 2,
-    "loam": 3,
-    "sand": 4
+    "Clay": 1,
+    "Silt": 2,
+    "Loam": 3,
+    "Sand": 4
 }
 
 building_type_map = {
@@ -46,6 +47,14 @@ Barsize_map = {
     "16mm": 16,
     "20mm": 20,
 }
+
+slope_map = {
+    "fourOverTwelve": 18.43,
+    "sixOverTwelve": 26.57,
+    "eightOverTwelve": 33.69,
+    "twelveOverTwelve": 45
+}
+
 
 
 app = Flask(__name__)
@@ -77,23 +86,23 @@ def analyze_generate():
 
     # Collect the form data
     uploaded_file = request.files.get('floor-plan')
-    soil_type = request.form.get('soilType')
     building_type = request.form.get('buildingType')
     num_storey = request.form.get('numStorey')
     material_spec = request.form.get('materialSpecs')
     barSize = request.form.get('barSize')
     location = request.form.get('location')
     roofType = request.form.get('roofType')
+    roofPitch = request.form.get('roofPitch')
 
     # Print the values received for debugging
     print(f"Uploaded File: {uploaded_file.filename if uploaded_file else 'No file uploaded'}")
-    print(f"Soil Type: {soil_type}")
     print(f"Building Type: {building_type}")
     print(f"Number of Storeys: {num_storey}")
     print(f"Material Spec: {material_spec}")
     print(f"Bar Size: {barSize}")
     print(f"Location: {location}")
     print(f"Roof Type: {roofType}")
+    print(f"Roof Pitch: {roofPitch}")
 
     # Perform backend validation
     missing_fields = []
@@ -101,10 +110,13 @@ def analyze_generate():
     missing_fields = [
         field for field, value in {
             "Floor Plan": uploaded_file,
-            "Soil Type": soil_type,
             "Building Type": building_type,
             "Number of Storeys": num_storey,
-            "Material Specifications": material_spec
+            "Material Specifications": material_spec,
+            "Bar Size": barSize,
+            "Location": location,
+            "Roof Type": roofType,
+            "Roof Pitch": roofPitch
         }.items() if not value
     ]
 
@@ -183,8 +195,15 @@ def analyze_generate():
     #
     #   This is for the floorplan JSON to foundation JSON
     #
-
+    import time 
+    start = time.time()
+    
     rl_module()
+    
+    end = time.time()
+    
+    lengthRLTimer = end - start
+    print(f"Time took for {lengthRLTimer}")
     
 
     #
@@ -200,19 +219,24 @@ def analyze_generate():
     #   This is for the VAE part
     #
 
+    seismic_zone,wind_speed,soil_type = (get_location_constants(location).values())
     
     soil_type_value = soil_type_map.get(soil_type)
     building_type_value = building_type_map.get(building_type)
     num_storey_value = num_storey_map.get(num_storey)
     material_spec_value = material_spec_map.get(material_spec)
     barsize_value = Barsize_map.get(barSize)
+    slopeAngleValue = slope_map.get(roofPitch)
     
+    print(soil_type)
+    print(soil_type_value)
     
-    soil_type_value = int(soil_type_value)
     building_type_value = int(building_type_value)
     num_storey_value = int(num_storey_value)
     material_spec_value = int(material_spec_value)
     barsize_value = int(barsize_value)
+    soil_type_value=int(soil_type_value)
+    
 
     single_input = [soil_type_value, material_spec_value, num_storey_value]
 
@@ -224,9 +248,9 @@ def analyze_generate():
 
     foundationplanjson = os.path.join(
         app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
-    generateFoundationPlan(foundationplanjson, column_scale, footing_scale,num_storey_value,barsize_value,soil_type,location,roofType,slopeAngle=None)
+    generateFoundationPlan(foundationplanjson, column_scale, footing_scale,num_storey_value,barsize_value,location,roofType,slopeAngleValue,lengthRLTimer)
 
-    # TODO: post.py and file association
+    # TODO: timers
 
     # Provide feedback and return the image path as JSON
     return jsonify({'image_path': url_for('static', filename=f'images/final_combined_image.png')})

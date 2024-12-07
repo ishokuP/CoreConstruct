@@ -153,7 +153,7 @@ def create_wall_annotation_layer(json_file, output_path, conversion_factor=1, te
         length_display = round(length_cm * conversion_factor, 2)
 
         # Add text annotation to the midpoint
-        cv2.putText(annotation_layer, f"{length_display} cm", (mid_x, mid_y),
+        cv2.putText(annotation_layer, f"{length_display} mm", (mid_x, mid_y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 1, cv2.LINE_AA)
 
     # Save the annotation layer as a PNG with transparency
@@ -234,16 +234,18 @@ def create_manual_footing_annotation_layer(expanded_column_image, conversion_fac
 
         # Calculate dimension in cm using the conversion factor
         footing_size_cm = round(w * conversion_factor, 2)
-
+        footing_size_m = footing_size_cm/1000
         # Calculate the position for the annotation (slightly above the bounding box)
         text_x = int(x + w / 2)
         text_y = max(0, y - offset)
 
         # Add text annotation to the layer
-        cv2.putText(annotation_layer, f"{footing_size_cm} cm", (text_x, text_y),
+        cv2.putText(annotation_layer, f"{footing_size_m*1000} mm", (text_x, text_y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255, 255), 1, cv2.LINE_AA)
 
     return annotation_layer, footing_size_cm
+
+
 def create_expanded_column_annotation_layer(expanded_column_image, output_path, conversion_factor=1, offset=10):
     """
     Create an annotation layer for the expanded columns by calculating their dimensions.
@@ -548,7 +550,7 @@ def calculate_square_reinforcement(footing_size, footing_thickness, bar_diameter
 
 import random
 
-def create_footing_info_layer(image_path, output_path, footing_size_cm, reinforcement_diameter, number_of_storeys,json_file_path,soil_type,location, conversion_factor=1, offset=10):
+def create_footing_info_layer(image_path, output_path, footing_size_cm, reinforcement_diameter, number_of_storeys,deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,lengthRLTimer,lengthVAE,conversion_factor=1, offset=10):
     """
     Create an annotation layer for footing information, including reinforcement details.
 
@@ -600,31 +602,25 @@ def create_footing_info_layer(image_path, output_path, footing_size_cm, reinforc
         # Determine depth of footing based on the number of storeys
         depth_of_footing = 1125 if number_of_storeys == 1 else 1425
 
-        # Prepare text lines
-        
-        from load_calculation2 import mainFunction
-        
-        
-        deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,foundationLoad = mainFunction(json_file_path,soil_type,location)
-        
+
         text_lines = [
             "Concrete Cover: 75 mm",
             "Footing Thickness: 225 mm",
             f"Reinforcement: {number_of_bars} pcs Desformed Steel Bar - {reinforcement_diameter} mm diameter - Spacing: {spacing:.1f} mm",
             f"Depth of Footing: {depth_of_footing} mm ({number_of_storeys} storey{'s' if number_of_storeys > 1 else ''})",
-            f"Dead Load: {deadLoad} kN = {wallLoad} kN + {floorLoad} kN + {roofLoad} kN ",
-            f"Total Live Load: {liveLoad} kN ",
-            f"Average Wind Load: {windLoad} kN",
-            f"Seismic Load: {seismicLoad} kN",
-            f"Total Building Load: {totalLoad} kN",
-            f"Total Foundation Load: {foundationLoad} kN"
+            f"Dead Load: {deadLoad:.2f} kN = {wallLoad:.2f} kN + {floorLoad:.2f} kN + {roofLoad:.2f} kN ",
+            f"Total Live Load: {liveLoad:.2f} kN ",
+            f"Average Wind Load: {windLoad:.2f} kN",
+            f"Seismic Load: {seismicLoad:.2f} kN",
+            f"Total Building Load: {totalLoad:.2f} kN",
+            f"Time Taken (Algorithm/Generation) : {lengthRLTimer:.2f} seconds / {lengthVAE:.2f} seconds"
         ]
         
         # TODO: Text Lines
 
         # Set text properties
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.6
+        font_scale = 0.3
         font_thickness = 1
         text_color_bgr = (0, 0, 0)  # Black text
         box_color_bgr = (255, 255, 255, 255)  # White background with full alpha
@@ -733,78 +729,78 @@ def save_image_with_alpha(img, output_path):
 
 
 # Main script to process the images
-if __name__ == "__main__":
-  # Input and output file paths
-    column_image = 'output/vae/generated_columns.png'
-    expanded_columns_output = 'output/vae/expanded_columns.png'
-    footing_output = 'output/vae/footing_layer_no_outline.png'
-    wall_image_path = 'output/vae/generated_walls.png'
-    padded_walls_output = 'output/vae/padded_walls_no_outline.png'
-    json_file_path = 'output/RL/RLFoundation.json'
-    padded_json_output = 'output/RL/RLFoundationPadded.json'
-    wall_annotation_output = 'output/vae/wall_annotation_layer.png'
-    footing_annotation_output = 'output/vae/footing_info_layer.png'
-    column_annotation_output = 'output/vae/manual_column_annotation_layer.png'
-    grid_cross_output = 'output/vae/black_dashed_grid_cross_marker_layer.png'
-    combined_layer_output = 'output/vae/combined_layer_with_dashed_outline.png'
-    footing_info_output = 'output/vae/footing_info_layer.png'  # New output file
-    final_combined_output = 'static/images/final_combined_image.png'
+# if __name__ == "__main__":
+#   # Input and output file paths
+#     column_image = 'output/vae/generated_columns.png'
+#     expanded_columns_output = 'output/vae/expanded_columns.png'
+#     footing_output = 'output/vae/footing_layer_no_outline.png'
+#     wall_image_path = 'output/vae/generated_walls.png'
+#     padded_walls_output = 'output/vae/padded_walls_no_outline.png'
+#     json_file_path = 'output/RL/RLFoundation.json'
+#     padded_json_output = 'output/RL/RLFoundationPadded.json'
+#     wall_annotation_output = 'output/vae/wall_annotation_layer.png'
+#     footing_annotation_output = 'output/vae/footing_info_layer.png'
+#     column_annotation_output = 'output/vae/manual_column_annotation_layer.png'
+#     grid_cross_output = 'output/vae/black_dashed_grid_cross_marker_layer.png'
+#     combined_layer_output = 'output/vae/combined_layer_with_dashed_outline.png'
+#     footing_info_output = 'output/vae/footing_info_layer.png'  # New output file
+#     final_combined_output = 'static/images/final_combined_image.png'
 
-    # Parameters
-    expansion_amount_columns = int(10 * column_scale)
-    expansion_amount_footing = int(90  * footing_scale)
-    padding_amount_walls = 40
-    conversion_factor = 7.46  # Example conversion factor (cm/px)
-    offset = 10  # Offset for annotations
-    padding_percentage = 0.2  # Padding percentage for JSON data
+#     # Parameters
+#     expansion_amount_columns = int(10 * column_scale)
+#     expansion_amount_footing = int(90  * footing_scale)
+#     padding_amount_walls = 40
+#     conversion_factor = 7.46  # Example conversion factor (cm/px)
+#     offset = 10  # Offset for annotations
+#     padding_percentage = 0.2  # Padding percentage for JSON data
 
-    # Step 1: Expand the columns
-    expand_columns(column_image, expanded_columns_output, expansion_amount_columns)
+#     # Step 1: Expand the columns
+#     expand_columns(column_image, expanded_columns_output, expansion_amount_columns)
 
-    # Step 2: Create the footing layer by expanding the columns
-    create_footing_layer(column_image, footing_output, expansion_amount_footing)
+#     # Step 2: Create the footing layer by expanding the columns
+#     create_footing_layer(column_image, footing_output, expansion_amount_footing)
 
-    # Step 3: Load and modify JSON data with padding
-    with open(json_file_path, 'r') as f:
-        json_data = json.load(f)
-    padded_json_data = add_padding_to_json(json_data, padding_percentage)
-    with open(padded_json_output, 'w') as f:
-        json.dump(padded_json_data, f, indent=4)
-    print(f"Updated JSON saved at {padded_json_output}")
+#     # Step 3: Load and modify JSON data with padding
+#     with open(json_file_path, 'r') as f:
+#         json_data = json.load(f)
+#     padded_json_data = add_padding_to_json(json_data, padding_percentage)
+#     with open(padded_json_output, 'w') as f:
+#         json.dump(padded_json_data, f, indent=4)
+#     print(f"Updated JSON saved at {padded_json_output}")
 
-    # Step 4: Add padding to the walls
-    add_padding_to_walls(wall_image_path, padded_walls_output, padding_amount_walls)
+#     # Step 4: Add padding to the walls
+#     add_padding_to_walls(wall_image_path, padded_walls_output, padding_amount_walls)
 
-    # Step 5: Create wall annotation layer
-    create_wall_annotation_layer(padded_json_output, wall_annotation_output, conversion_factor=1)
+#     # Step 5: Create wall annotation layer
+#     create_wall_annotation_layer(padded_json_output, wall_annotation_output, conversion_factor=1)
 
-    # Step 6: Create footing annotation layer and get footing size
-    footing_annotation_layer, footing_size_cm = create_manual_footing_annotation_layer(footing_output, conversion_factor, offset)
+#     # Step 6: Create footing annotation layer and get footing size
+#     footing_annotation_layer, footing_size_cm = create_manual_footing_annotation_layer(footing_output, conversion_factor, offset)
 
-    # Step 7: Create expanded column annotation layer
-    create_expanded_column_annotation_layer(expanded_columns_output, column_annotation_output, conversion_factor, offset)
+#     # Step 7: Create expanded column annotation layer
+#     create_expanded_column_annotation_layer(expanded_columns_output, column_annotation_output, conversion_factor, offset)
 
-    # Step 8: Create dashed grid cross marker layer
-    canvas_width = padded_json_data['features']['canvas_width']
-    canvas_height = padded_json_data['features']['canvas_height']
-    create_dashed_grid_cross_layer(padded_json_output, grid_cross_output, canvas_width, canvas_height)
+#     # Step 8: Create dashed grid cross marker layer
+#     canvas_width = padded_json_data['features']['canvas_width']
+#     canvas_height = padded_json_data['features']['canvas_height']
+#     create_dashed_grid_cross_layer(padded_json_output, grid_cross_output, canvas_width, canvas_height)
 
-    # Step 9: Combine layers and add dashed outline
-    combine_layers_and_add_dashed_outline(footing_output, padded_walls_output, combined_layer_output)
+#     # Step 9: Combine layers and add dashed outline
+#     combine_layers_and_add_dashed_outline(footing_output, padded_walls_output, combined_layer_output)
 
-    # Step 10: Create footing information layer
-    reinforcement_diameter = barsize_value  # User input (in mm)
-    number_of_storeys = num_storey_value  # User input (1 or 2)
-    create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys, conversion_factor, offset)
-    # Step 11: Combine all layers into the final image
-    layers = [
-        wall_annotation_output,
-        footing_annotation_output,
-        column_annotation_output,
-        footing_info_output,          # New layer with footing info
-        grid_cross_output,
-        expanded_columns_output,
-        combined_layer_output  # Bottommost layer
-    ]
-    canvas_size = (canvas_width, canvas_height)
-    combine_all_layers(layers, final_combined_output, canvas_size)
+#     # Step 10: Create footing information layer
+#     reinforcement_diameter = barsize_value  # User input (in mm)
+#     number_of_storeys = num_storey_value  # User input (1 or 2)
+#     create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys, conversion_factor, offset)
+#     # Step 11: Combine all layers into the final image
+#     layers = [
+#         wall_annotation_output,
+#         footing_annotation_output,
+#         column_annotation_output,
+#         footing_info_output,          # New layer with footing info
+#         grid_cross_output,
+#         expanded_columns_output,
+#         combined_layer_output  # Bottommost layer
+#     ]
+#     canvas_size = (canvas_width, canvas_height)
+#     combine_all_layers(layers, final_combined_output, canvas_size)
