@@ -78,6 +78,22 @@ def calculate_wind_load(wind_speed, wall_area, roof_area, Cp_wall, Cp_roof):
 def calculate_seismic_load(total_weight, seismic_coefficient):
     return total_weight * seismic_coefficient
 
+def order_vertices(corners):
+    # Find the centroid
+    n = len(corners)
+    centroid_x = sum(corner['x'] for corner in corners) / n
+    centroid_y = sum(corner['y'] for corner in corners) / n
+
+    # Calculate angles and sort vertices
+    corners_with_angles = [
+        {**corner, 'angle': math.atan2(corner['y'] - centroid_y, corner['x'] - centroid_x)} for corner in corners
+    ]
+    corners_with_angles.sort(key=lambda corner: corner['angle'])  # Sort by angle
+
+    # Return only the ordered vertices
+    return [{'x': corner['x'], 'y': corner['y']} for corner in corners_with_angles]
+
+
 # Function to calculate the polygon area from the JSON file (floor/roof area)
 def calculate_polygon_area_from_json(json_file):
     with open(json_file, 'r') as file:
@@ -87,6 +103,8 @@ def calculate_polygon_area_from_json(json_file):
     if not corners:
         raise ValueError("No averaged_corners found in the JSON file.")
 
+    ordered_corners = order_vertices(corners)
+    corners = ordered_corners
     n = len(corners)
     area = 0
     for i in range(n):
@@ -95,7 +113,7 @@ def calculate_polygon_area_from_json(json_file):
         area += x1 * y2 - y1 * x2
 
     area = abs(area) / 2.0
-    real_area = (area * 35)/100000
+    real_area = (area * 44.7436)/1000000
     print(f"house area: {real_area}")
     return real_area  # Convert cm² to m²
 
