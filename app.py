@@ -92,7 +92,6 @@ def analyze_generate():
     barSize = request.form.get('barSize')
     location = request.form.get('location')
     roofType = request.form.get('roofType')
-    roofPitch = request.form.get('roofPitch')
 
     # Print the values received for debugging
     print(f"Uploaded File: {uploaded_file.filename if uploaded_file else 'No file uploaded'}")
@@ -102,7 +101,6 @@ def analyze_generate():
     print(f"Bar Size: {barSize}")
     print(f"Location: {location}")
     print(f"Roof Type: {roofType}")
-    print(f"Roof Pitch: {roofPitch}")
 
     # Perform backend validation
     missing_fields = []
@@ -116,7 +114,6 @@ def analyze_generate():
             "Bar Size": barSize,
             "Location": location,
             "Roof Type": roofType,
-            "Roof Pitch": roofPitch
         }.items() if not value
     ]
 
@@ -226,7 +223,6 @@ def analyze_generate():
     num_storey_value = num_storey_map.get(num_storey)
     material_spec_value = material_spec_map.get(material_spec)
     barsize_value = Barsize_map.get(barSize)
-    slopeAngleValue = slope_map.get(roofPitch)
     
     print(soil_type)
     print(soil_type_value)
@@ -248,7 +244,7 @@ def analyze_generate():
 
     foundationplanjson = os.path.join(
         app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
-    generateFoundationPlan(foundationplanjson, column_scale, footing_scale,num_storey_value,barsize_value,location,roofType,slopeAngleValue,lengthRLTimer)
+    generateFoundationPlan(foundationplanjson, column_scale, footing_scale,num_storey_value,barsize_value,location,roofType,lengthRLTimer)
 
     # TODO: timers
 

@@ -194,7 +194,7 @@ def generate_layout(model, json_file):
 # Load the trained VAE model and generate layout based on JSON
 
 
-def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_value,barsize_value,location,roofType,slopeAngle,lengthRLTimer,model_path='models/vae/vae_final.pth'):
+def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_value,barsize_value,location,roofType,lengthRLTimer,model_path='models/vae/vae_final.pth'):
     import time
     start = time.time()
     # Initialize VAE and load trained weights
@@ -263,7 +263,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     from load_calculation2 import mainFunction
     valueMeter = footing_size_cm / 1000
 
-    deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,foundationLoad = mainFunction(padded_json_output,cnnjson,location,roofType,slopeAngle,valueMeter)
+    deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,foundationLoad = mainFunction(padded_json_output,cnnjson,location,roofType,valueMeter)
     print(f"Pre Footing Size: {expansion_amount_footing}")
     scaling_factor = sqrt(totalLoad/foundationLoad)
     expansion_amount_footing = expansion_amount_footing * scaling_factor

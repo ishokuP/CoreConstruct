@@ -2,7 +2,7 @@ import math
 import json
 
 # Function to calculate dead load
-def calculate_dead_load(json_file,wind_speed=180,roof_type="Flat", slope_angle=None, wall_height=2.9, wall_thickness=0.2, wall_density=2400, floor_density=2400):
+def calculate_dead_load(json_file,wind_speed=180,roof_type="Flat", wall_height=2.9, wall_thickness=0.2, wall_density=2400, floor_density=2400):
     """
     Returns:
     - tuple: Total wall load (kN), floor load (kN), roof load (kN), wall wind load (kN), roof wind load (kN).
@@ -36,11 +36,11 @@ def calculate_dead_load(json_file,wind_speed=180,roof_type="Flat", slope_angle=N
     roof_area = floor_area  # Assume roof area equals floor area
 
     # Floor load
-    floor_load = floor_area * 0.1 * floor_density
+    floor_load = floor_area * 0.125 * floor_density
     floor_load_kN = floor_load * 0.00980665  # Convert from kg to kN
 
     # Roof load
-    roof_load = calculate_roof_load(roof_type, roof_area, material_density=7850, slope_angle=slope_angle)
+    roof_load = calculate_roof_load(roof_type, roof_area, material_density=7850)
     roof_load_kN = roof_load * 0.00980665 # Convert from kg to kN
 
     # Wind load
@@ -53,14 +53,9 @@ def calculate_dead_load(json_file,wind_speed=180,roof_type="Flat", slope_angle=N
     return total_wall_load_kN, floor_load_kN, roof_load_kN, wall_wind_load_kN, roof_wind_load_kN
 
 # Function to calculate roof load
-def calculate_roof_load(roof_type, area, material_density, slope_angle=None):
+def calculate_roof_load(roof_type, area, material_density):
     if roof_type == "flat":
         roof_load = area * 0.01 * material_density
-    elif roof_type == "sloped":
-        if slope_angle is None:
-            raise ValueError("Slope angle is required for sloped roofs.")
-        slope_factor = (1 + (math.tan(math.radians(slope_angle)))**2)**0.5
-        roof_load = area * material_density * slope_factor
     else:
         raise ValueError("Unknown roof type")
     
@@ -100,7 +95,9 @@ def calculate_polygon_area_from_json(json_file):
         area += x1 * y2 - y1 * x2
 
     area = abs(area) / 2.0
-    return area / 10000  # Convert cm² to m²
+    real_area = (area * 35)/100000
+    print(f"house area: {real_area}")
+    return real_area  # Convert cm² to m²
 
 # Function to calculate foundation load (footing size)
 def calculate_foundation_load(json_data, soil_type):
@@ -129,14 +126,14 @@ def calculate_foundation_load(json_data, soil_type):
     return total_load
 
 # Main function to calculate total load (deadload + wind load + liveload + seismic load)
-def mainFunction(json_fileRL,json_fileCNN,location,roof_type,slope_angle,valueMeter):
+def mainFunction(json_fileRL,json_fileCNN,location,roof_type,valueMeter):
     seismic_zone, wind_speed, soil_type = (get_location_constants(location).values())
     if seismic_zone == 4:
         seismic_coefficient = 0.3
     else:
         seismic_coefficient = 0.15
     # Calculate Dead Load
-    total_wall_load, floor_load, roof_load, wall_wind_load, roof_wind_load = calculate_dead_load(json_fileCNN,wind_speed,roof_type, slope_angle)
+    total_wall_load, floor_load, roof_load, wall_wind_load, roof_wind_load = calculate_dead_load(json_fileCNN,wind_speed,roof_type)
     
     # Calculate Live Load
     floor_area = calculate_polygon_area_from_json(json_fileCNN)
