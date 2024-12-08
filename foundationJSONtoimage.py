@@ -291,7 +291,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     # Step 10: Create footing information layer
     reinforcement_diameter = barsize_value  # User input (in mm)
     number_of_storeys = num_storey_value  # User input (1 or 2)
-    sleep_time = random.randint(15, 20)
+    sleep_time = random.randint(10, 18)
     time.sleep(sleep_time)
     end = time.time()
     lengthVAE= end-start
