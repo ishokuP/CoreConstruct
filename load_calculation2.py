@@ -141,7 +141,7 @@ def mainFunction(json_fileRL,json_fileCNN,location,roof_type,valueMeter):
     
     # Average Wind Load (assuming equal wind distribution across all walls)
     walls = json.loads(open(json_fileCNN).read()).get('walls', [])
-    average_wall_wind_load = sum([wall_wind_load for _ in walls]) / (len(walls)/2)
+    average_wall_wind_load = sum([wall_wind_load for _ in walls])/4
     
     # Calculate Seismic Load
     total_weight = total_wall_load + floor_load + roof_load + live_load
