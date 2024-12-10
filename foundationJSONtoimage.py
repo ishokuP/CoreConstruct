@@ -194,7 +194,7 @@ def generate_layout(model, json_file):
 # Load the trained VAE model and generate layout based on JSON
 
 
-def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_value,barsize_value,location,roofType,lengthRLTimer,model_path='models/vae/vae_final.pth'):
+def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_value,barsize_value,location,roofType,lengthRLTimer,uploaded_file,model_path='models/vae/vae_final.pth'):
     import time
     start = time.time()
     # Initialize VAE and load trained weights
@@ -269,10 +269,12 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     expansion_amount_footing = expansion_amount_footing * scaling_factor
     expansion_amount_footing = int(expansion_amount_footing)
     print(f"Final Footing Size: {expansion_amount_footing}")
+    print(f"Pre Footing Size Cm: {footing_size_cm} ")
     create_footing_layer(column_image, footing_output, expansion_amount_footing)
     
-    
     footing_annotation_layer, footing_size_cm = create_manual_footing_annotation_layer(footing_output, conversion_factor, offset)
+    print(f"Post Footing Size Cm: {footing_size_cm} ")
+    
     
     footing_annotation_output_path = 'output/vae/manual_footing_annotation_layer.png'
     save_image_with_alpha(footing_annotation_layer, footing_annotation_output_path)
@@ -295,6 +297,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     time.sleep(sleep_time)
     end = time.time()
     lengthVAE= end-start
+    
     create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys,deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,lengthRLTimer,lengthVAE,conversion_factor, offset)
     # Step 11: Combine all layers into the final image
     layers = [
@@ -309,8 +312,32 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     ]
     canvas_size = (canvas_width, canvas_height)
     combine_all_layers(layers, final_combined_output, canvas_size)
+    
+    
+    # Remove if not Testing 
+    
+    import os
+    import pandas as pd
+    file_path = "results.csv"
+    # Data to save
+    data = {
+        "Uploaded File": [uploaded_file],
+        "Length RL Timer": [lengthRLTimer],
+        "Length VAE": [lengthVAE],
+    }
 
+    # Convert to a DataFrame
+    df = pd.DataFrame(data)
 
+    # Check if the file exists
+    if os.path.exists(file_path):
+        # Append data to the existing file
+        df.to_csv(file_path, mode='a', index=False, header=False)
+    else:
+        # Create a new file with headers
+        df.to_csv(file_path, index=False)
+
+    print(f"Data saved to {file_path}")
 
 
 

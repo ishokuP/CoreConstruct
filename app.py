@@ -244,7 +244,7 @@ def analyze_generate():
 
     foundationplanjson = os.path.join(
         app.config['OUTPUT_DIR'], 'RL', 'RLFoundation.json')
-    generateFoundationPlan(foundationplanjson, column_scale, footing_scale,num_storey_value,barsize_value,location,roofType,lengthRLTimer)
+    generateFoundationPlan(foundationplanjson, column_scale, footing_scale,num_storey_value,barsize_value,location,roofType,lengthRLTimer,uploaded_file.filename)
 
     # TODO: timers
 
