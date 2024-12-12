@@ -6,7 +6,7 @@ import torch.nn as nn
 import cv2
 import numpy as np
 from math import sqrt
-from post import add_padding_to_json, create_footing_info_layer, expand_columns, create_dashed_grid_cross_layer, create_footing_layer, add_padding_to_walls, create_manual_footing_annotation_layer, create_wall_annotation_layer, create_expanded_column_annotation_layer, combine_all_layers, combine_layers_and_add_dashed_outline, save_image_with_alpha
+from post import add_padding_to_json, create_footing_info_layer, expand_columns, create_dashed_grid_cross_layer, create_footing_layer, add_padding_to_walls, create_manual_footing_annotation_layer, create_wall_annotation_layer, create_expanded_column_annotation_layer, combine_all_layers, combine_layers_and_add_dashed_outline, save_image_with_alpha,create_annotation_output
 # TODO: post
 # Conditional VAE Model (same as before)
 
@@ -235,7 +235,8 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
 
     # Step 1: Expand the columns
     expand_columns(column_image, expanded_columns_output, expansion_amount_columns)
-
+    
+    
     # Step 2: Create the footing layer by expanding the columns
     create_footing_layer(column_image, footing_output, expansion_amount_footing)
 
@@ -281,6 +282,8 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
 
     # Step 7: Create expanded column annotation layer
     create_expanded_column_annotation_layer(expanded_columns_output, column_annotation_output, conversion_factor, offset)
+    column_dimension = create_annotation_output(expanded_columns_output, column_annotation_output, conversion_factor, offset)
+    
 
     # Step 8: Create dashed grid cross marker layer
     canvas_width = padded_json_data['features']['canvas_width']
@@ -298,7 +301,7 @@ def generateFoundationPlan(json_file,column_scale, footing_scale,num_storey_valu
     end = time.time()
     lengthVAE= end-start
     
-    create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys,deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,lengthRLTimer,lengthVAE,conversion_factor, offset)
+    create_footing_info_layer(footing_output, footing_info_output, footing_size_cm, reinforcement_diameter, number_of_storeys,deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,lengthRLTimer,lengthVAE,column_dimension,conversion_factor, offset)
     # Step 11: Combine all layers into the final image
     layers = [
         wall_annotation_output,

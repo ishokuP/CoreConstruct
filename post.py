@@ -204,7 +204,55 @@ def create_annotation_layer_from_image(image_path, output_path, conversion_facto
 
     # Save the annotation layer
     save_image_with_alpha(annotation_layer, output_path)
-    
+ 
+def create_annotation_output(image_path, output_path, conversion_factor=1, offset=10, text_color=(0,255,0,255), annotate_only_one=False):
+    """
+    Create an annotation layer by calculating dimensions from an image.
+
+    Parameters:
+    - image_path: Path to the input image.
+    - output_path: Path to save the annotation layer.
+    - conversion_factor: Conversion factor from pixels to display units.
+    - offset: Vertical offset for the text annotations.
+    - text_color: Color of the text annotations.
+    - annotate_only_one: If True, only annotate one contour.
+    """
+    img = load_image_with_alpha(image_path)
+    binary_mask = create_binary_mask_from_alpha(img)
+    contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Create an empty transparent image for the annotation layer
+    annotation_layer = np.zeros_like(img)
+
+    # If annotate_only_one is True, select one contour (e.g., the largest)
+    if annotate_only_one and contours:
+        contours = [max(contours, key=cv2.contourArea)]
+
+    # Iterate through each contour and calculate its dimensions
+    for contour in contours:
+        # Calculate the bounding box of each contour
+        x, y, w, h = cv2.boundingRect(contour)
+
+        # Calculate dimension using the conversion factor
+        dimension = round(w * conversion_factor, 2)
+        
+        return dimension
+
+        # # Calculate the position for the annotation (slightly above the bounding box)
+        # text_x = int(x + w / 2)
+        # text_y = max(0, y - offset)  # Ensure text doesn't go out of bounds
+
+        # # Add text annotation
+        # cv2.putText(annotation_layer, f"{dimension} cm", (text_x, text_y),
+        #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 1, cv2.LINE_AA)
+
+        # # If only annotating one contour, break after the first
+        # if annotate_only_one:
+        #     break
+
+    # Save the annotation layer
+    save_image_with_alpha(annotation_layer, output_path)
+     
 def create_manual_footing_annotation_layer(expanded_column_image, conversion_factor=1, offset=10):
     """
     Create an annotation layer for footings by manually calculating their dimensions from the expanded column image.
@@ -258,6 +306,7 @@ def create_expanded_column_annotation_layer(expanded_column_image, output_path, 
         text_color=(0,255,0,255),
         annotate_only_one=True  # Only annotate one column
     )
+    
 def draw_dashed_line(img, start_point, end_point, color=(0, 0, 0, 255), thickness=1, dash_length=20, gap_length=5):
     """
     Draw a dashed line on an image from start_point to end_point.
@@ -550,7 +599,7 @@ def calculate_square_reinforcement(footing_size, footing_thickness, bar_diameter
 
 import random
 
-def create_footing_info_layer(image_path, output_path, footing_size_cm, reinforcement_diameter, number_of_storeys,deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,lengthRLTimer,lengthVAE,conversion_factor=1, offset=10):
+def create_footing_info_layer(image_path, output_path, footing_size_cm, reinforcement_diameter, number_of_storeys,deadLoad,wallLoad,floorLoad,roofLoad,liveLoad,windLoad,seismicLoad,totalLoad,lengthRLTimer,lengthVAE,column_dimension,conversion_factor=1, offset=10):
     """
     Create an annotation layer for footing information, including reinforcement details.
 
@@ -601,11 +650,12 @@ def create_footing_info_layer(image_path, output_path, footing_size_cm, reinforc
 
         # Determine depth of footing based on the number of storeys
         depth_of_footing = 1125 if number_of_storeys == 1 else 1425
+        footing_thickness = (footing_size_cm - column_dimension)/20 + 75
 
 
         text_lines = [
             "Concrete Cover: 75 mm",
-            "Footing Thickness: 225 mm",
+            f"Footing Thickness: {footing_thickness} mm",
             f"Reinforcement: {number_of_bars} pcs Desformed Steel Bar - {reinforcement_diameter} mm diameter - Spacing: {spacing:.1f} mm",
             f"Depth of Footing: {depth_of_footing} mm ({number_of_storeys} storey{'s' if number_of_storeys > 1 else ''})",
             f"Dead Load: {deadLoad:.2f} kN = {wallLoad:.2f} kN + {floorLoad:.2f} kN + {roofLoad:.2f} kN ",
