@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, jsonify, flash, redirect, url_for
+from flask import Flask, render_template, request, jsonify, flash, redirect, url_for,send_from_directory
 import os
+from PIL import Image
 import json
 import numpy as np
 from werkzeug.utils import secure_filename
+import shutil
 
 
 
@@ -282,6 +284,82 @@ def load():
         return jsonify({'status': 'success', 'diagram': diagram_data})
     else:
         return jsonify({'status': 'error', 'message': 'No saved diagram found!'})
+    
+    
+@app.route('/save-foundation-plan', methods=['POST'])
+def save_foundation_plan():
+    data = request.json
+    file_name = data.get('fileName', 'foundation-plan.cct')  # Default to foundation-plan.cct
+    file_type = data.get('fileType', 'cct')  # Default to CCT
+
+    json_file_path = os.path.join('output', 'RL', 'RLFoundationPadded.json')  # The original JSON file
+    save_path = os.path.join('output', 'RL', file_name)  # Save in the output folder
+
+    try:
+        # Read the JSON data and save it as a .cct file (or other formats as needed)
+        with open(json_file_path, 'r') as json_file:
+            json_data = json_file.read()
+        
+        # You can add logic to transform the JSON into a proper .cct format if necessary,
+        # but here it's assumed that you are just renaming the file.
+        with open(save_path, 'w') as cct_file:
+            cct_file.write(json_data)
+        
+        return jsonify({"message": "File saved successfully", "fileName": file_name})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+   
+@app.route('/save-as-foundation-plan', methods=['POST'])
+def save_as_foundation_plan():
+    data = request.json
+    file_type = data.get('fileType', 'png')  # Get the selected file type
+    file_name = data.get('fileName', 'foundation-plan')  # Get the desired file name
+
+    if file_type == 'cct':  # Save the JSON file as .cct
+        json_file_path = os.path.join('output', 'RL', 'RLFoundationPadded.json')  # Path to the original JSON
+        save_path = os.path.join('output', 'RL', file_name)  # Save path for the .cct file
+
+        try:
+            # Read the JSON data and save it as a .cct file (you may want to format or transform it here)
+            with open(json_file_path, 'r') as json_file:
+                json_data = json_file.read()
+
+            with open(save_path, 'w') as cct_file:
+                cct_file.write(json_data)
+
+            return jsonify({"message": "File saved successfully", "fileName": file_name})
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+
+    elif file_type == 'png':  # Save the image as .png
+        image_file_path = os.path.join('static', 'images', 'final_combined_image.png')  # Path to the PNG image
+        save_path = os.path.join('output', 'RL', file_name)  # Save path for the .png file
+
+        try:
+            # Open and save the image as PNG
+            img = Image.open(image_file_path)
+            img.save(save_path, 'PNG')  # Save the image as PNG format
+
+            return jsonify({"message": "Image saved successfully", "fileName": file_name})
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+
+    else:
+        return jsonify({"error": "Unsupported file type."}), 400
+
+@app.route('/download/<filename>')
+def download_file(filename):
+    # Define the directory where files are saved
+    directory = os.path.join('output', 'RL')
+
+    try:
+        # Send the file to the user
+        return send_from_directory(directory, filename, as_attachment=True)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found."}), 404
 
 
 if __name__ == '__main__':

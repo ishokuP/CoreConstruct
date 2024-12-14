@@ -26,24 +26,32 @@ function getFoundationPlan() {
 }
 
 function saveFoundationPlan() {
-    if (selectedFile) {
-        const userFileName = document.getElementById("project-title").innerText.trim();
-
-        const newFileName = userFileName ? `${userFileName}.${selectedFile.name.split('.').pop()}` : 'renamed-foundation-plan.png';
-
-        const blob = new Blob([selectedFile], { type: selectedFile.type });
-        const downloadUrl = URL.createObjectURL(blob);
-
-        const downloadLink = document.createElement('a');
-        downloadLink.href = downloadUrl;
-        downloadLink.download = newFileName;
-        downloadLink.click();
-
-        URL.revokeObjectURL(downloadUrl);
-    } else {
-        alert('No file selected. Please select a file first.');
-    }
+    // Send a request to save the RLFoundationPadded.json as a .cct file
+    fetch('/save-foundation-plan', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileType: 'cct', fileName: 'foundation-plan.cct' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert(data.message);  // Success message
+            window.location.href = `/download/${data.fileName}`;  // Trigger download
+        } else {
+            alert("Error: " + data.error);  // Error message
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to save the file.');
+    });
 }
+
+
+
+
 
 function saveAsFoundationPlan() {
     document.getElementById('saveAsModal').style.display = 'flex';
@@ -54,52 +62,48 @@ function closeModal() {
 }
 
 function confirmSaveAs() {
-    if (selectedFile) {
-        const userFileName = document.getElementById("project-title").innerText.trim();
+    const userFileName = document.getElementById("project-title").innerText.trim();
+    const fileType = document.getElementById("file-type-selector").value;
+    let newFileName = userFileName ? userFileName : 'renamed-foundation-plan';
 
-        const fileType = document.getElementById("file-type-selector").value;
-        let newFileName = userFileName ? userFileName : 'renamed-foundation-plan';
-
-        switch (fileType) {
-            case 'png':
-                newFileName += '.png';
-                break;
-            case 'jpg':
-                newFileName += '.jpg';
-                break;
-            case 'psd':
-                newFileName += '.psd';
-                break;
-            default:
-                newFileName += '.png';
-                break;
-        }
-
-        let mimeType = selectedFile.type;
-        if (fileType === 'jpg') {
-            mimeType = 'image/jpeg';
-        } else if (fileType === 'psd') {
-            mimeType = 'image/vnd.adobe.photoshop';
-        } else if (fileType === 'png') {
-            mimeType = 'image/png';
-        }
-
-        const blob = new Blob([selectedFile], { type: mimeType });
-        const downloadUrl = URL.createObjectURL(blob);
-
-        const downloadLink = document.createElement('a');
-        downloadLink.href = downloadUrl;
-        downloadLink.download = newFileName;
-        downloadLink.click();
-
-        URL.revokeObjectURL(downloadUrl);
-
-        console.log(`File saved as: ${newFileName}`);
-        closeModal();
-    } else {
-        alert('No file selected. Please select a file first.');
+    // Set the file extension based on selected format
+    switch (fileType) {
+        case 'cct':
+            newFileName += '.cct';  // Default behavior for .cct (same as Save button)
+            break;
+        case 'png':
+            newFileName += '.png';  // .png selection triggers the image save
+            break;
+        default:
+            newFileName += '.cct';  // Default to .cct if nothing is selected
+            break;
     }
+
+    // Send the selected file type and file name to the backend
+    fetch('/save-as-foundation-plan', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileType: fileType, fileName: newFileName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert(data.message);  // Success message
+            window.location.href = `/download/${newFileName}`;  // Trigger download
+        } else {
+            alert("Error: " + data.error);  // Error message
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to save the file.');
+    });
+
+    closeModal();  // Close the modal after confirming
 }
+
 
 document.querySelectorAll(".select-group").forEach(function (dropdownGroup) {
     const button = dropdownGroup.querySelector("button");
