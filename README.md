@@ -83,5 +83,5 @@ Portions may be reused with proper citation and acknowledgment.
 
 ## 📫 Contact
 
-For academic or development inquiries, please open an [issue](https://github.com/) or fork the project.
+For academic or development inquiries, please open an [issue](https://github.com/ishokuP/CoreConstruct/issues/new) or fork the project.
 
